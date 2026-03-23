@@ -30,7 +30,7 @@ export default function Home() {
             to="/register"
             className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:opacity-95 hover:scale-[1.03] transition font-semibold shadow-xl text-slate-950"
           >
-            Register
+            Get Started
           </Link>
         </div>
       </nav>
@@ -41,28 +41,24 @@ export default function Home() {
           {/* Left Content */}
           <div>
             <p className="inline-block px-4 py-2 rounded-full bg-slate-900/50 border border-slate-700 text-sm text-slate-300">
-              Workflow Automation • SLA Intelligence • Audit Compliance
+              Workflow Automation meets Performance Intelligence
             </p>
 
-            <h2 className="mt-6 text-5xl font-extrabold leading-tight tracking-tight">
-              Automate approvals. <br />
-              Deliver workflow{" "}
-              <span className="text-emerald-400">performance</span>.
+            <h2 className="mt-6 text-4xl font-extrabold leading-tight tracking-tight">
+              Build smarter workflows with accountability and{" "}
+              <span className="text-emerald-400 to-blue-500">performance tracking</span>
             </h2>
 
             <p className="mt-6 text-lg text-slate-300 leading-relaxed">
-              FlowNova is a workflow & performance intelligence platform
-              designed for organizations to automate approvals, enforce SLA
-              timelines, and generate analytics dashboards with full audit
-              tracking.
+             IntelliFlow is a workflow and performance intelligence platform that enables organizations to define structured processes, assign responsibility to groups, and track Performance across every stage with full transparency and accountability.
             </p>
 
             <div className="mt-10 flex gap-4">
               <Link
                 to="/register"
-                className="px-7 py-3 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:opacity-95 hover:scale-[1.03] transition font-semibold text-lg shadow-xl text-slate-950"
+                className="px-7 py-3 rounded-xl bg-gradient-to-r from-emerald-400 to-blue-400 hover:opacity-95 hover:scale-[1.03] transition font-semibold text-lg shadow-xl text-slate-950"
               >
-                Register
+                Get Started
               </Link>
 
               <Link
