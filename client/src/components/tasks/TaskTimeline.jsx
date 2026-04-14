@@ -14,10 +14,13 @@ export default function TaskTimeline({ workflow, task }) {
   }
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+    <div className="rounded-2xl border border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.84))] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">
         Stage Timeline
       </h3>
+      <p className="mb-3 text-xs text-slate-500">
+        Completed stages are green, the current stage is blue, and upcoming stages stay muted.
+      </p>
       <div className="space-y-2">
         {stages.map((stage) => {
           const stageKey = stage.name.toLowerCase();

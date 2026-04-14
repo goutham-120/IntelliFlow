@@ -83,32 +83,41 @@ export default function TaskCreate() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
-        <h1 className="text-3xl font-bold text-white">Create Task</h1>
-        <p className="text-sm text-slate-400">
-          Choose workflow-driven creation or standalone task creation.
+      <div className="rounded-[32px] border border-[#e8e8e4] bg-[radial-gradient(circle_at_top_left,rgba(216,237,230,0.9),transparent_28%),linear-gradient(180deg,#ffffff,#f9f9f7)] p-6 shadow-[0_18px_50px_rgba(17,17,17,0.06)]">
+        <h1 className="text-3xl font-bold text-slate-900">Create Task</h1>
+        <p className="text-sm text-slate-600">
+          Choose the right creation path so new users understand whether work should
+          follow a workflow or be handled as standalone work.
         </p>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-400/40 bg-red-500/20 p-3 text-red-300">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-700">
           {error}
         </div>
       )}
 
-      <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
+      <section className="rounded-[28px] border border-[#e8e8e4] bg-white p-6 shadow-[0_12px_35px_rgba(17,17,17,0.05)]">
         {loading ? (
-          <div className="text-slate-400">Loading...</div>
+          <div className="text-slate-500">Loading...</div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="inline-flex rounded-xl border border-slate-700 bg-slate-950 p-1">
+            <div className="rounded-2xl border border-[#e8e8e4] bg-[#fbfbfa] p-4 text-sm text-slate-700">
+              <p className="font-medium text-slate-900">Beginner guide</p>
+              <p className="mt-2 text-slate-500">
+                Use <span className="text-slate-900">Workflow</span> when the task should move
+                through defined stages. Use <span className="text-slate-900">Standalone</span> when
+                it’s a direct work item without a workflow lifecycle.
+              </p>
+            </div>
+            <div className="inline-flex rounded-xl border border-[#e8e8e4] bg-[#f4f6f3] p-1">
               <button
                 type="button"
                 onClick={() => setCreateMode("workflow")}
                 className={`rounded-lg px-3 py-1.5 text-sm ${
                   createMode === "workflow"
                     ? "bg-emerald-500 text-slate-950"
-                    : "text-slate-300 hover:bg-slate-800"
+                    : "text-slate-600 hover:bg-white"
                 }`}
               >
                 Workflow
@@ -119,7 +128,7 @@ export default function TaskCreate() {
                 className={`rounded-lg px-3 py-1.5 text-sm ${
                   createMode === "standalone"
                     ? "bg-emerald-500 text-slate-950"
-                    : "text-slate-300 hover:bg-slate-800"
+                    : "text-slate-600 hover:bg-white"
                 }`}
               >
                 Standalone
@@ -131,7 +140,7 @@ export default function TaskCreate() {
               placeholder="Task title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white"
+              className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-2.5 text-slate-900"
               required
             />
 
@@ -139,7 +148,7 @@ export default function TaskCreate() {
               <select
                 value={workflowId}
                 onChange={(event) => setWorkflowId(event.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white"
+                className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-2.5 text-slate-900"
               >
                 <option value="">Select workflow</option>
                 {workflows
@@ -154,9 +163,9 @@ export default function TaskCreate() {
               <select
                 value={assignedGroupId}
                 onChange={(event) => setAssignedGroupId(event.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white"
+                className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-2.5 text-slate-900"
               >
-                <option value="">Select group (optional)</option>
+                <option value="">Select team (optional)</option>
                 {groups.map((group) => (
                   <option key={group._id} value={group._id}>
                     {group.name}
@@ -169,13 +178,13 @@ export default function TaskCreate() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="rounded-xl bg-emerald-500 px-5 py-2.5 font-semibold text-slate-950 disabled:opacity-60"
+                className="rounded-xl bg-emerald-600 px-5 py-2.5 font-semibold text-white disabled:opacity-60"
               >
                 {submitting ? "Creating..." : "Create Task"}
               </button>
               <Link
                 to="/tasks"
-                className="rounded-xl border border-slate-700 px-5 py-2.5 text-sm text-slate-300"
+                className="rounded-xl border border-[#e8e8e4] px-5 py-2.5 text-sm text-slate-700"
               >
                 Back to Tasks
               </Link>

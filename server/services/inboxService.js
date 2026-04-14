@@ -1,12 +1,7 @@
 import mongoose from "mongoose";
 
 import Notification from "../models/Notification.js";
-
-const createServiceError = (status, message) => {
-  const error = new Error(message);
-  error.status = status;
-  return error;
-};
+import { createServiceError } from "./serviceHelpers.js";
 
 export const getInboxNotificationsService = async ({
   organizationId,

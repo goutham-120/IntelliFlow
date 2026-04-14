@@ -1,8 +1,10 @@
 import { NavLink } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function Sidebar({ sidebarOpen }) {
   const { user } = useAuth();
+  const { isLightTheme } = useTheme();
 
   // Common items (visible to all logged users)
   const commonItems = [
@@ -15,7 +17,7 @@ export default function Sidebar({ sidebarOpen }) {
   ];
 
   // User + Admin items
-  const userItems = [{ name: "Groups", path: "/groups" }];
+  const userItems = [{ name: "Teams", path: "/teams" }];
 
   // Admin-only items
   const adminItems = [
@@ -91,7 +93,7 @@ export default function Sidebar({ sidebarOpen }) {
         </svg>
       );
     }
-    if (name === "Groups") {
+    if (name === "Teams") {
       return (
         <svg viewBox="0 0 24 24" fill="none" className={iconClass}>
           <path d="M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm8 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM4 20a4 4 0 1 1 8 0M12 20a4 4 0 1 1 8 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -120,10 +122,14 @@ export default function Sidebar({ sidebarOpen }) {
     <aside
       className={`${
         sidebarOpen ? "w-72" : "w-24"
-      } shrink-0 h-screen sticky top-0 transition-[width] duration-300 ease-in-out bg-slate-900/70 border-r border-slate-800/80 backdrop-blur-xl px-3 py-5`}
+      } shrink-0 h-screen sticky top-0 transition-[width] duration-300 ease-in-out border-r backdrop-blur-xl px-3 py-5 ${
+        isLightTheme
+          ? "bg-black border-slate-200/80"
+          : "bg-slate-900/70 border-slate-800/80"
+      }`}
     >
       <div className="mb-10 flex items-center gap-3 px-2">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-500/10 text-emerald-300">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-400/30 bg-blue-500/10 text-white">
           <span className="font-bold">IF</span>
         </div>
         <div
@@ -134,7 +140,7 @@ export default function Sidebar({ sidebarOpen }) {
           <h1 className="text-lg font-semibold tracking-wide text-white">
             IntelliFlow
           </h1>
-          <p className="text-xs text-slate-400">Workflow System</p>
+          <p className="text-xs text-white">Workflow System</p>
         </div>
       </div>
 
@@ -147,12 +153,14 @@ export default function Sidebar({ sidebarOpen }) {
             className={({ isActive }) =>
               `group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 ${
                 isActive
-                  ? "bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/30"
-                  : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
+                  ? "bg-white text-black ring-1 border-green-700 ring-green-600/10"
+                 
+                  : "text-white hover:bg-slate-100 hover:text-slate-900"
+          
               }`
             }
           >
-            <span className="text-slate-400 group-hover:text-emerald-300">
+            <span className={`${isLightTheme ? "text-slate-400" : "text-slate-400"} group-hover:text-emerald-300`}>
               {getItemIcon(item.name)}
             </span>
             <span

@@ -72,7 +72,7 @@ export default function GroupManagement() {
         setSelectedGroupId(data?.[0]?._id || "");
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load groups");
+      setError(err.response?.data?.message || "Failed to load teams");
     } finally {
       setLoadingGroups(false);
     }
@@ -122,12 +122,12 @@ export default function GroupManagement() {
     setSubmitting(true);
     try {
       const data = await createGroup(groupForm);
-      setSuccess(data?.message || "Group created");
+      setSuccess(data?.message || "Team created");
       setGroupForm(defaultGroupForm);
       setOpenCreateModal(false);
       await loadGroups();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create group");
+      setError(err.response?.data?.message || "Failed to create team");
     } finally {
       setSubmitting(false);
     }
@@ -151,12 +151,12 @@ export default function GroupManagement() {
       }
 
       const data = await updateGroup(selectedGroup._id, payload);
-      setSuccess(data?.message || "Group updated");
+      setSuccess(data?.message || "Team updated");
       setEditGroupForm({});
       await loadGroups();
       await loadMembers(selectedGroup._id);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update group");
+      setError(err.response?.data?.message || "Failed to update team");
     } finally {
       setSubmitting(false);
     }
@@ -211,34 +211,36 @@ export default function GroupManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-emerald-400/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 p-6 shadow-xl shadow-emerald-500/10">
+      <div className="rounded-[2rem] border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/70 to-teal-100/70 p-6 shadow-[0_24px_80px_-40px_rgba(16,185,129,0.45)]">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-emerald-300/80">
+            <p className="text-xs uppercase tracking-[0.22em] text-emerald-600/80">
               Responsibility Units
             </p>
-            <h1 className="mt-2 text-3xl font-bold text-white">Group Management</h1>
-            <p className="mt-2 text-sm text-slate-300">
-              Manage cross-functional groups and membership authority without fixed
+            <h1 className="mt-2 font-['Baloo_2'] text-3xl font-bold text-slate-900">
+              Team Management
+            </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Manage cross-functional teams and membership authority without fixed
               hierarchy.
             </p>
           </div>
 
           <div className="flex gap-3">
-            <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-3">
-              <p className="text-xs text-slate-400">Groups</p>
-              <p className="text-xl font-semibold text-white">
+            <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-sm shadow-emerald-100">
+              <p className="text-xs text-slate-500">Teams</p>
+              <p className="text-xl font-semibold text-slate-900">
                 {groups.length}
-                <span className="ml-2 text-sm text-emerald-300">
+                <span className="ml-2 text-sm text-emerald-600">
                   {activeGroupsCount} active
                 </span>
               </p>
             </div>
-            <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-4 py-3">
-              <p className="text-xs text-slate-400">Members in selected</p>
-              <p className="text-xl font-semibold text-white">
+            <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-sm shadow-emerald-100">
+              <p className="text-xs text-slate-500">Members in selected</p>
+              <p className="text-xl font-semibold text-slate-900">
                 {memberships.length}
-                <span className="ml-2 text-sm text-cyan-300">
+                <span className="ml-2 text-sm text-teal-600">
                   {activeMembersCount} active
                 </span>
               </p>
@@ -249,27 +251,35 @@ export default function GroupManagement() {
 
       {(error || success) && (
         <div
-          className={`rounded-2xl border px-4 py-3 text-sm ${
+          className={`rounded-2xl border px-4 py-3 text-sm shadow-sm ${
             error
-              ? "border-red-400/40 bg-red-500/15 text-red-200"
-              : "border-emerald-400/40 bg-emerald-500/15 text-emerald-100"
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700"
           }`}
         >
           {error || success}
         </div>
       )}
 
+      <section className="rounded-[2rem] border border-white/80 bg-white/90 p-5 text-sm text-slate-600 shadow-[0_18px_50px_-35px_rgba(15,23,42,0.35)]">
+        <p className="font-medium text-slate-900">Beginner guide</p>
+        <p className="mt-2 text-slate-600">
+          A team works like a responsibility bucket. Workflows assign stages to teams, and
+          team members can then take responsibility for tasks that enter those stages.
+        </p>
+      </section>
+
       <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-        <section className="rounded-3xl border border-slate-800 bg-slate-900/60 p-4">
+        <section className="rounded-[2rem] border border-white/80 bg-white/90 p-4 shadow-[0_18px_50px_-35px_rgba(15,23,42,0.35)]">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">Groups</h2>
+            <h2 className="font-['Baloo_2'] text-lg font-semibold text-slate-900">Teams</h2>
             {isAdmin && (
               <button
                 onClick={() => {
                   clearMessages();
                   setOpenCreateModal(true);
                 }}
-                className="rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-200 transition hover:bg-emerald-500/20"
+                className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100"
               >
                 + New
               </button>
@@ -277,9 +287,9 @@ export default function GroupManagement() {
           </div>
 
           {loadingGroups ? (
-            <p className="text-sm text-slate-400">Loading groups...</p>
+            <p className="text-sm text-slate-500">Loading teams...</p>
           ) : groups.length === 0 ? (
-            <p className="text-sm text-slate-400">No groups available.</p>
+            <p className="text-sm text-slate-500">No teams available.</p>
           ) : (
             <div className="space-y-2">
               {groups.map((group) => (
@@ -288,26 +298,26 @@ export default function GroupManagement() {
                   onClick={() => setSelectedGroupId(group._id)}
                   className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
                     selectedGroupId === group._id
-                      ? "border-emerald-400/50 bg-emerald-500/15"
-                      : "border-slate-700 bg-slate-900/70 hover:border-slate-500"
+                      ? "border-emerald-300 bg-emerald-50 shadow-sm shadow-emerald-100"
+                      : "border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/50"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-white">{group.name}</p>
+                    <p className="font-semibold text-slate-900">{group.name}</p>
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs ${
                         group.isActive
-                          ? "bg-emerald-500/20 text-emerald-200"
-                          : "bg-slate-700 text-slate-300"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-slate-100 text-slate-500"
                       }`}
                     >
                       {group.isActive ? "active" : "inactive"}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs tracking-wider text-cyan-300">
+                  <p className="mt-1 text-xs tracking-wider text-teal-600">
                     {group.code}
                   </p>
-                  <p className="mt-2 line-clamp-2 text-xs text-slate-400">
+                  <p className="mt-2 line-clamp-2 text-xs text-slate-500">
                     {group.description || "No description"}
                   </p>
                 </button>
@@ -316,21 +326,24 @@ export default function GroupManagement() {
           )}
         </section>
 
-        <section className="rounded-3xl border border-slate-800 bg-slate-900/60 p-5">
+        <section className="rounded-[2rem] border border-white/80 bg-white/90 p-5 shadow-[0_18px_50px_-35px_rgba(15,23,42,0.35)]">
           {!selectedGroup ? (
-            <div className="rounded-2xl border border-dashed border-slate-700 p-8 text-center text-slate-400">
-              Select a group to view memberships.
+            <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/50 p-8 text-center text-slate-500">
+              Select a team on the left to review its members, edit its details, and
+              manage who can lead or administer it.
             </div>
           ) : (
             <div className="space-y-5">
-              <div className="flex flex-col gap-4 rounded-2xl border border-slate-700 bg-gradient-to-br from-slate-900 to-slate-950 p-4 md:flex-row md:items-start md:justify-between">
+              <div className="flex flex-col gap-4 rounded-2xl border border-emerald-100 bg-gradient-to-br from-white via-emerald-50/80 to-teal-100/70 p-4 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <h3 className="text-2xl font-semibold text-white">{selectedGroup.name}</h3>
-                  <p className="mt-1 text-xs tracking-[0.2em] text-cyan-300">
+                  <h3 className="font-['Baloo_2'] text-2xl font-semibold text-slate-900">
+                    {selectedGroup.name}
+                  </h3>
+                  <p className="mt-1 text-xs tracking-[0.2em] text-teal-600">
                     {selectedGroup.code}
                   </p>
-                  <p className="mt-3 text-sm text-slate-300">
-                    {selectedGroup.description || "No description added for this group."}
+                  <p className="mt-3 text-sm text-slate-600">
+                    {selectedGroup.description || "No description added for this team."}
                   </p>
                 </div>
 
@@ -338,7 +351,7 @@ export default function GroupManagement() {
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <button
                       onClick={() => setOpenMemberModal(true)}
-                      className="rounded-xl border border-cyan-400/40 bg-cyan-500/10 px-4 py-2 text-sm font-medium text-cyan-200 transition hover:bg-cyan-500/20"
+                      className="rounded-xl border border-teal-200 bg-white px-4 py-2 text-sm font-medium text-teal-700 transition hover:border-teal-300 hover:bg-teal-50"
                     >
                       Add Member
                     </button>
@@ -347,8 +360,8 @@ export default function GroupManagement() {
               </div>
 
               {isAdmin && (
-                <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
-                  <p className="mb-3 text-sm font-medium text-slate-200">Quick Update Group</p>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                  <p className="mb-3 text-sm font-medium text-slate-800">Quick Update Team</p>
                   <div className="grid gap-3 md:grid-cols-3">
                     <input
                       type="text"
@@ -357,7 +370,7 @@ export default function GroupManagement() {
                       onChange={(event) =>
                         setEditGroupForm((prev) => ({ ...prev, name: event.target.value }))
                       }
-                      className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-emerald-300"
                     />
                     <input
                       type="text"
@@ -366,7 +379,7 @@ export default function GroupManagement() {
                       onChange={(event) =>
                         setEditGroupForm((prev) => ({ ...prev, code: event.target.value }))
                       }
-                      className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-emerald-300"
                     />
                     <input
                       type="text"
@@ -378,14 +391,14 @@ export default function GroupManagement() {
                           description: event.target.value,
                         }))
                       }
-                      className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-emerald-300"
                     />
                   </div>
                   <div className="mt-3 flex justify-end">
                     <button
                       onClick={handleUpdateGroup}
                       disabled={submitting}
-                      className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:brightness-110 disabled:opacity-60"
+                      className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
                     >
                       Save Changes
                     </button>
@@ -393,24 +406,24 @@ export default function GroupManagement() {
                 </div>
               )}
 
-              <div className="rounded-2xl border border-slate-700 bg-slate-900/70">
-                <div className="border-b border-slate-800 px-4 py-3">
-                  <p className="text-sm font-semibold text-white">Memberships</p>
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <div className="border-b border-slate-200 px-4 py-3">
+                  <p className="text-sm font-semibold text-slate-900">Memberships</p>
                 </div>
 
                 {loadingMembers ? (
-                  <p className="p-4 text-sm text-slate-400">Loading members...</p>
+                  <p className="p-4 text-sm text-slate-500">Loading members...</p>
                 ) : memberships.length === 0 ? (
-                  <p className="p-4 text-sm text-slate-400">No members in this group yet.</p>
+                  <p className="p-4 text-sm text-slate-500">No members in this team yet.</p>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[700px] text-left text-sm text-slate-300">
-                      <thead className="bg-slate-800/70 text-xs uppercase tracking-wide text-slate-400">
+                    <table className="w-full min-w-[700px] text-left text-sm text-slate-600">
+                      <thead className="bg-emerald-50 text-xs uppercase tracking-wide text-slate-500">
                         <tr>
                           <th className="px-4 py-3">Name</th>
                           <th className="px-4 py-3">Email</th>
                           <th className="px-4 py-3">System Role</th>
-                          <th className="px-4 py-3">Role In Group</th>
+                          <th className="px-4 py-3">Role In Team</th>
                           <th className="px-4 py-3">Actions</th>
                         </tr>
                       </thead>
@@ -418,11 +431,15 @@ export default function GroupManagement() {
                         {memberships.map((membership) => (
                           <tr
                             key={membership._id}
-                            className="border-t border-slate-800 hover:bg-slate-800/40"
+                            className="border-t border-slate-100 hover:bg-emerald-50/60"
                           >
-                            <td className="px-4 py-3">{membership.userId?.name || "-"}</td>
+                            <td className="px-4 py-3 font-medium text-slate-800">
+                              {membership.userId?.name || "-"}
+                            </td>
                             <td className="px-4 py-3">{membership.userId?.email || "-"}</td>
-                            <td className="px-4 py-3 capitalize">{membership.userId?.role}</td>
+                            <td className="px-4 py-3 capitalize text-slate-700">
+                              {membership.userId?.role}
+                            </td>
                             <td className="px-4 py-3">
                               {isAdmin ? (
                                 <select
@@ -433,26 +450,29 @@ export default function GroupManagement() {
                                       event.target.value
                                     )
                                   }
-                                  className="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs capitalize"
+                                  className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 outline-none transition focus:border-emerald-300"
                                 >
                                   <option value="member">member</option>
-                                  <option value="group_admin">group_admin</option>
-                                  <option value="supervisor">supervisor</option>
+                                  <option value="team_lead">Team Lead</option>
                                 </select>
                               ) : (
-                                <span className="capitalize">{membership.roleInGroup}</span>
+                                <span className="capitalize">
+                                  {membership.roleInGroup === "team_lead"
+                                    ? "Team Lead"
+                                    : membership.roleInGroup}
+                                </span>
                               )}
                             </td>
                             <td className="px-4 py-3">
                               {isAdmin ? (
                                 <button
                                   onClick={() => handleRemoveMember(membership.userId?._id)}
-                                  className="rounded-lg border border-red-400/30 bg-red-500/10 px-2 py-1 text-xs text-red-200 transition hover:bg-red-500/20"
+                                  className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-600 transition hover:bg-red-100"
                                 >
                                   Remove
                                 </button>
                               ) : (
-                                <span className="text-xs text-slate-500">View only</span>
+                                <span className="text-xs text-slate-400">View only</span>
                               )}
                             </td>
                           </tr>
@@ -468,33 +488,33 @@ export default function GroupManagement() {
       </div>
 
       {openCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
-            <h3 className="text-xl font-semibold text-white">Create Group</h3>
-            <p className="mt-1 text-sm text-slate-400">
-              Define a responsibility unit for workflow stage assignments.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-[2rem] border border-white/80 bg-white p-6 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.45)]">
+            <h3 className="font-['Baloo_2'] text-xl font-semibold text-slate-900">Create Team</h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Define a team for workflow stage assignments.
             </p>
 
             <form className="mt-5 space-y-3" onSubmit={handleCreateGroup}>
               <input
                 type="text"
-                placeholder="Group Name"
+                placeholder="Team Name"
                 required
                 value={groupForm.name}
                 onChange={(event) =>
                   setGroupForm((prev) => ({ ...prev, name: event.target.value }))
                 }
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
               />
               <input
                 type="text"
-                placeholder="Group Code"
+                placeholder="Team Code"
                 required
                 value={groupForm.code}
                 onChange={(event) =>
                   setGroupForm((prev) => ({ ...prev, code: event.target.value }))
                 }
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 uppercase text-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 uppercase text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
               />
               <textarea
                 placeholder="Description (optional)"
@@ -503,23 +523,23 @@ export default function GroupManagement() {
                 onChange={(event) =>
                   setGroupForm((prev) => ({ ...prev, description: event.target.value }))
                 }
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
               />
 
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setOpenCreateModal(false)}
-                  className="rounded-xl bg-slate-700 px-4 py-2 text-sm text-white"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-60"
+                  className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
                 >
-                  Create
+                  Create Team
                 </button>
               </div>
             </form>
@@ -528,9 +548,11 @@ export default function GroupManagement() {
       )}
 
       {openMemberModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
-            <h3 className="text-xl font-semibold text-white">Add Group Member</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[2rem] border border-white/80 bg-white p-6 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.45)]">
+            <h3 className="font-['Baloo_2'] text-xl font-semibold text-slate-900">
+              Add Team Member
+            </h3>
             <form className="mt-4 space-y-3" onSubmit={handleAddMember}>
               <select
                 required
@@ -538,7 +560,7 @@ export default function GroupManagement() {
                 onChange={(event) =>
                   setMemberForm((prev) => ({ ...prev, userId: event.target.value }))
                 }
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
               >
                 <option value="">Select user</option>
                 {availableUsers.map((user) => (
@@ -552,25 +574,24 @@ export default function GroupManagement() {
                 onChange={(event) =>
                   setMemberForm((prev) => ({ ...prev, roleInGroup: event.target.value }))
                 }
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white"
               >
                 <option value="member">member</option>
-                <option value="group_admin">group_admin</option>
-                <option value="supervisor">supervisor</option>
+                <option value="team_lead">Team Lead</option>
               </select>
 
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setOpenMemberModal(false)}
-                  className="rounded-xl bg-slate-700 px-4 py-2 text-sm text-white"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-60"
+                  className="rounded-xl bg-teal-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-600 disabled:opacity-60"
                 >
                   Add Member
                 </button>

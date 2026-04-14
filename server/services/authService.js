@@ -3,13 +3,8 @@ import jwt from "jsonwebtoken";
 
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
+import { createServiceError } from "./serviceHelpers.js";
 import { normalizeSystemRole } from "../utils/systemRole.js";
-
-const createServiceError = (status, message) => {
-  const error = new Error(message);
-  error.status = status;
-  return error;
-};
 
 const generateToken = (user) =>
   jwt.sign(

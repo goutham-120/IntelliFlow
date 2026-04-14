@@ -2,28 +2,12 @@ import Group from "../models/Group.js";
 import GroupMembership from "../models/GroupMembership.js";
 import Task from "../models/Task.js";
 import User from "../models/User.js";
-
-const createServiceError = (status, message) => {
-  const error = new Error(message);
-  error.status = status;
-  return error;
-};
-
-const ensureGroupInOrg = async ({ organizationId, groupId }) => {
-  const group = await Group.findOne({ _id: groupId, organizationId });
-  if (!group) {
-    throw createServiceError(404, "Group not found");
-  }
-  return group;
-};
-
-const ensureUserInOrg = async ({ organizationId, userId }) => {
-  const user = await User.findOne({ _id: userId, organizationId });
-  if (!user) {
-    throw createServiceError(404, "User not found in this organization");
-  }
-  return user;
-};
+import {
+  createServiceError,
+  ensureGroupInOrg,
+  ensureUserInOrg,
+  selectLeastLoadedGroupMember,
+} from "./serviceHelpers.js";
 
 export const createGroupService = async ({
   organizationId,
@@ -42,7 +26,7 @@ export const createGroupService = async ({
     return {
       status: 201,
       payload: {
-        message: "Group created successfully",
+        message: "Team created successfully",
         group,
       },
     };
@@ -82,7 +66,7 @@ export const updateGroupService = async ({
     return {
       status: 200,
       payload: {
-        message: "Group updated successfully",
+        message: "Team updated successfully",
         group,
       },
     };
@@ -101,7 +85,11 @@ export const addGroupMemberService = async ({
   roleInGroup,
 }) => {
   await ensureGroupInOrg({ organizationId, groupId });
-  const user = await ensureUserInOrg({ organizationId, userId });
+  const user = await ensureUserInOrg({
+    organizationId,
+    userId,
+    notFoundMessage: "User not found in this organization",
+  });
 
   if (user.role === "admin") {
     throw createServiceError(400, "Admin users should not be regular group members");
@@ -122,7 +110,7 @@ export const addGroupMemberService = async ({
   return {
     status: 201,
     payload: {
-      message: "Group membership created successfully",
+        message: "Team membership created successfully",
       membership,
     },
   };
@@ -177,7 +165,7 @@ export const removeGroupMemberService = async ({
   return {
     status: 200,
     payload: {
-      message: "Member removed from group successfully",
+        message: "Member removed from team successfully",
     },
   };
 };
@@ -212,39 +200,12 @@ export const getUserGroupsService = async ({ organizationId, userId }) => {
 
 export const selectLeastLoadedMemberService = async ({ organizationId, groupId }) => {
   await ensureGroupInOrg({ organizationId, groupId });
-
-  const memberships = await GroupMembership.find({
+  const membership = await selectLeastLoadedGroupMember({
     organizationId,
     groupId,
-    isActive: true,
-  }).populate("userId", "name email role isActive");
-
-  const activeMembers = memberships.filter((m) => m.userId?.isActive);
-  if (!activeMembers.length) {
-    throw createServiceError(400, "No active members in this group");
-  }
-
-  const loadEntries = await Promise.all(
-    activeMembers.map(async (m) => {
-      const openTasks = await Task.countDocuments({
-        organizationId,
-        assignedTo: m.userId._id,
-        status: { $in: ["pending", "in_progress", "blocked"] },
-      });
-
-      return {
-        membership: m,
-        load: openTasks,
-      };
-    })
-  );
-
-  loadEntries.sort((a, b) => {
-    if (a.load !== b.load) return a.load - b.load;
-    return new Date(a.membership.createdAt) - new Date(b.membership.createdAt);
+    noMembersMessage: "No active members in this group",
   });
-
-  return loadEntries[0].membership;
+  return GroupMembership.findById(membership._id).populate("userId", "name email role isActive");
 };
 
 export const assignTaskToGroupService = async ({
@@ -262,8 +223,8 @@ export const assignTaskToGroupService = async ({
       isActive: true,
     }).select("roleInGroup");
 
-    if (requesterMembership?.roleInGroup !== "group_admin") {
-      throw createServiceError(403, "Only admin or group admin can assign tasks for this group");
+    if (requesterMembership?.roleInGroup !== "team_lead") {
+      throw createServiceError(403, "Only admin or team lead can assign tasks for this team");
     }
   }
 

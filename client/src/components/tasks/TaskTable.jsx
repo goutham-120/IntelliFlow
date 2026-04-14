@@ -17,7 +17,10 @@ export default function TaskTable({
   return (
     <div className="grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
       {tasks.map((task) => (
-        <div key={task._id} className="space-y-3 rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+        <div
+          key={task._id}
+          className="space-y-3 rounded-2xl border border-slate-800 bg-[linear-gradient(180deg,rgba(2,6,23,0.94),rgba(15,23,42,0.84))] p-4 shadow-[0_10px_26px_rgba(0,0,0,0.16)] transition hover:border-emerald-400/30"
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 className="text-base font-semibold text-white">{task.title}</h3>
             <div className="flex items-center gap-2">
@@ -48,12 +51,15 @@ export default function TaskTable({
               Stage: {task.stageName || "None"}
             </span>
             <span className="rounded-lg border border-slate-700 px-2.5 py-1">
-              Group: {task.assignedGroupId?.name || "None"}
+              Team: {task.assignedGroupId?.name || "None"}
             </span>
             <span className="rounded-lg border border-slate-700 px-2.5 py-1">
               Assignee: {task.assignedTo?.name || "Unassigned"}
             </span>
           </div>
+          <p className="text-xs text-slate-500">
+            Open the task to edit workflow mode, assignments, stage progression, or deletion.
+          </p>
         </div>
       ))}
     </div>

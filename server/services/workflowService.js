@@ -1,11 +1,6 @@
 import Group from "../models/Group.js";
 import Workflow from "../models/Workflow.js";
-
-const createServiceError = (status, message) => {
-  const error = new Error(message);
-  error.status = status;
-  return error;
-};
+import { createServiceError, ensureWorkflowInOrg } from "./serviceHelpers.js";
 
 const ensureStageOrderIsSequential = (stages) => {
   const sortedOrders = [...stages].map((s) => s.order).sort((a, b) => a - b);
@@ -36,14 +31,6 @@ const normalizeStagesForStorage = (stages) =>
       order: stage.order,
       groupId: stage.groupId,
     }));
-
-const ensureWorkflowInOrg = async ({ organizationId, workflowId }) => {
-  const workflow = await Workflow.findOne({ _id: workflowId, organizationId });
-  if (!workflow) {
-    throw createServiceError(404, "Workflow not found");
-  }
-  return workflow;
-};
 
 export const createWorkflowService = async ({
   organizationId,

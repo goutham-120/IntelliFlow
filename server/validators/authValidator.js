@@ -2,9 +2,7 @@ import {
   ACCEPTED_ROLE_INPUTS,
   normalizeSystemRole,
 } from "../utils/systemRole.js";
-
-const isNonEmptyString = (value) =>
-  typeof value === "string" && value.trim().length > 0;
+import { isNonEmptyString } from "./validatorHelpers.js";
 
 export const validateRegisterOrg = (req, res, next) => {
   const { orgName, orgCode, adminName, adminEmail, adminPassword } = req.body;

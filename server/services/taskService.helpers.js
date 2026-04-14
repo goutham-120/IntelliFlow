@@ -1,47 +1,13 @@
-import Group from "../models/Group.js";
 import GroupMembership from "../models/GroupMembership.js";
-import Task from "../models/Task.js";
-import User from "../models/User.js";
-import Workflow from "../models/Workflow.js";
 import { emitTaskNotification } from "./notificationService.js";
-
-export const createServiceError = (status, message) => {
-  const error = new Error(message);
-  error.status = status;
-  return error;
-};
-
-export const ensureTaskInOrg = async ({ organizationId, taskId }) => {
-  const task = await Task.findOne({ _id: taskId, organizationId });
-  if (!task) {
-    throw createServiceError(404, "Task not found");
-  }
-  return task;
-};
-
-export const ensureWorkflowInOrg = async ({ organizationId, workflowId }) => {
-  const workflow = await Workflow.findOne({ _id: workflowId, organizationId });
-  if (!workflow) {
-    throw createServiceError(404, "Workflow not found");
-  }
-  return workflow;
-};
-
-export const ensureGroupInOrg = async ({ organizationId, groupId }) => {
-  const group = await Group.findOne({ _id: groupId, organizationId });
-  if (!group) {
-    throw createServiceError(404, "Group not found");
-  }
-  return group;
-};
-
-export const ensureUserInOrg = async ({ organizationId, userId }) => {
-  const user = await User.findOne({ _id: userId, organizationId });
-  if (!user) {
-    throw createServiceError(404, "User not found");
-  }
-  return user;
-};
+import {
+  createServiceError,
+  ensureGroupInOrg,
+  ensureTaskInOrg,
+  ensureUserInOrg,
+  ensureWorkflowInOrg,
+  selectLeastLoadedGroupMember,
+} from "./serviceHelpers.js";
 
 export const ensureActiveGroupMember = async ({ organizationId, groupId, userId }) => {
   const membership = await GroupMembership.findOne({
@@ -51,7 +17,7 @@ export const ensureActiveGroupMember = async ({ organizationId, groupId, userId 
     isActive: true,
   });
   if (!membership) {
-    throw createServiceError(400, "User is not an active member of the assigned group");
+    throw createServiceError(400, "User is not an active member of the assigned team");
   }
   return membership;
 };
@@ -72,48 +38,16 @@ export const canRequesterManualAssign = async ({
     isActive: true,
   }).select("roleInGroup");
 
-  return membership?.roleInGroup === "group_admin";
+  return membership?.roleInGroup === "team_lead";
 };
 
-export const selectLeastLoadedGroupMember = async ({ organizationId, groupId }) => {
-  const memberships = await GroupMembership.find({
-    organizationId,
-    groupId,
-    isActive: true,
-  }).populate("userId", "isActive");
-
-  const activeMembers = memberships.filter((m) => m.userId?.isActive);
-  if (!activeMembers.length) {
-    throw createServiceError(400, "No active members available in the assigned group");
-  }
-
-  const loadEntries = await Promise.all(
-    activeMembers.map(async (membership) => {
-      const openTasks = await Task.countDocuments({
-        organizationId,
-        assignedTo: membership.userId._id,
-        status: { $in: ["pending", "in_progress", "blocked"] },
-      });
-
-      return { membership, load: openTasks };
-    })
-  );
-
-  loadEntries.sort((a, b) => {
-    if (a.load !== b.load) return a.load - b.load;
-    return new Date(a.membership.createdAt) - new Date(b.membership.createdAt);
-  });
-
-  return loadEntries[0].membership;
-};
-
-const getGroupAdminsAndSupervisors = async ({ organizationId, groupId }) => {
+const getTeamLeads = async ({ organizationId, groupId }) => {
   if (!groupId) return [];
   const memberships = await GroupMembership.find({
     organizationId,
     groupId,
     isActive: true,
-    roleInGroup: { $in: ["group_admin", "supervisor"] },
+    roleInGroup: "team_lead",
   }).select("userId");
   return memberships.map((membership) => membership.userId);
 };
@@ -122,35 +56,17 @@ export const canRequesterCompleteStage = async ({
   organizationId,
   requesterId,
   requesterRole,
-  assignedGroupId,
   assignedTo,
 }) => {
-  if (requesterRole === "admin") return true;
-  if (assignedTo && String(assignedTo) === String(requesterId)) return true;
-  if (!assignedGroupId) return false;
-
-  const membership = await GroupMembership.findOne({
-    organizationId,
-    groupId: assignedGroupId,
-    userId: requesterId,
-    isActive: true,
-  }).select("roleInGroup");
-
-  return membership?.roleInGroup === "group_admin" || membership?.roleInGroup === "supervisor";
+  void organizationId;
+  void requesterRole;
+  return Boolean(assignedTo && String(assignedTo) === String(requesterId));
 };
 
 export const notifyTaskReachedGroupStage = async ({ task, stageName, groupId, assigneeId }) => {
-  const groupLeads = await getGroupAdminsAndSupervisors({
+  const teamLeads = await getTeamLeads({
     organizationId: task.organizationId,
     groupId,
-  });
-
-  await emitTaskNotification({
-    organizationId: task.organizationId,
-    taskId: task._id,
-    type: "stage_reached",
-    recipientGroupId: groupId,
-    message: `Task "${task.title}" reached stage "${stageName}"`,
   });
 
   if (assigneeId) {
@@ -163,13 +79,13 @@ export const notifyTaskReachedGroupStage = async ({ task, stageName, groupId, as
     });
   }
 
-  if (groupLeads.length) {
+  if (teamLeads.length) {
     await emitTaskNotification({
       organizationId: task.organizationId,
       taskId: task._id,
-      type: "manual_assignment_available",
-      recipientUserIds: groupLeads,
-      message: `Manual reassignment is available for task "${task.title}"`,
+      type: "team_stage_ready",
+      recipientUserIds: teamLeads,
+      message: `Task "${task.title}" is now in your team's stage "${stageName}"`,
     });
   }
 };

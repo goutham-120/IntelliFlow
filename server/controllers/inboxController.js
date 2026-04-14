@@ -4,58 +4,40 @@ import {
   markAllInboxNotificationsReadService,
   markInboxNotificationReadService,
 } from "../services/inboxService.js";
+import { createController } from "./controllerHandler.js";
 
-export const getInboxNotifications = async (req, res) => {
-  try {
-    const result = await getInboxNotificationsService({
-      organizationId: req.user.organizationId,
-      userId: req.user._id,
-      unreadOnly: req.query.unreadOnly === "true",
-      limit: req.query.limit,
-    });
-    res.status(result.status).json(result.payload);
-  } catch (error) {
-    console.error("Get Inbox Notifications Error:", error.message);
-    res.status(error.status || 500).json({ message: error.message || "Server Error" });
-  }
-};
+const withInboxUser = (req) => ({
+  organizationId: req.user.organizationId,
+  userId: req.user._id,
+});
 
-export const getUnreadInboxCount = async (req, res) => {
-  try {
-    const result = await getUnreadInboxCountService({
-      organizationId: req.user.organizationId,
-      userId: req.user._id,
-    });
-    res.status(result.status).json(result.payload);
-  } catch (error) {
-    console.error("Get Inbox Unread Count Error:", error.message);
-    res.status(error.status || 500).json({ message: error.message || "Server Error" });
-  }
-};
+export const getInboxNotifications = createController(
+  "Get Inbox Notifications",
+  getInboxNotificationsService,
+  (req) => ({
+    ...withInboxUser(req),
+    unreadOnly: req.query.unreadOnly === "true",
+    limit: req.query.limit,
+  })
+);
 
-export const markInboxNotificationRead = async (req, res) => {
-  try {
-    const result = await markInboxNotificationReadService({
-      organizationId: req.user.organizationId,
-      userId: req.user._id,
-      notificationId: req.params.notificationId,
-    });
-    res.status(result.status).json(result.payload);
-  } catch (error) {
-    console.error("Mark Inbox Notification Read Error:", error.message);
-    res.status(error.status || 500).json({ message: error.message || "Server Error" });
-  }
-};
+export const getUnreadInboxCount = createController(
+  "Get Inbox Unread Count",
+  getUnreadInboxCountService,
+  withInboxUser
+);
 
-export const markAllInboxNotificationsRead = async (req, res) => {
-  try {
-    const result = await markAllInboxNotificationsReadService({
-      organizationId: req.user.organizationId,
-      userId: req.user._id,
-    });
-    res.status(result.status).json(result.payload);
-  } catch (error) {
-    console.error("Mark All Inbox Notifications Read Error:", error.message);
-    res.status(error.status || 500).json({ message: error.message || "Server Error" });
-  }
-};
+export const markInboxNotificationRead = createController(
+  "Mark Inbox Notification Read",
+  markInboxNotificationReadService,
+  (req) => ({
+    ...withInboxUser(req),
+    notificationId: req.params.notificationId,
+  })
+);
+
+export const markAllInboxNotificationsRead = createController(
+  "Mark All Inbox Notifications Read",
+  markAllInboxNotificationsReadService,
+  withInboxUser
+);

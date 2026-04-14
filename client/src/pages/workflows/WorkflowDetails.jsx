@@ -69,27 +69,37 @@ export default function WorkflowDetails() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
-        <h1 className="text-3xl font-bold text-white">Workflow Details</h1>
-        <p className="text-sm text-slate-400">Review and update stage sequence and assignment groups.</p>
+      <div className="rounded-[32px] border border-[#e8e8e4] bg-[radial-gradient(circle_at_top_left,rgba(216,237,230,0.9),transparent_28%),linear-gradient(180deg,#ffffff,#f9f9f7)] p-6 shadow-[0_18px_50px_rgba(17,17,17,0.06)]">
+        <h1 className="text-3xl font-bold text-slate-900">Workflow Details</h1>
+        <p className="text-sm text-slate-600">
+          Review stage sequence, team ownership, and whether this workflow should stay
+          active for new tasks.
+        </p>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-400/40 bg-red-500/20 p-3 text-red-300">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-700">
           {error}
         </div>
       )}
       {success && (
-        <div className="rounded-xl border border-emerald-400/40 bg-emerald-500/20 p-3 text-emerald-300">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-700">
           {success}
         </div>
       )}
 
-      <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
+      <section className="rounded-[28px] border border-[#e8e8e4] bg-white p-6 shadow-[0_12px_35px_rgba(17,17,17,0.05)]">
         {loading ? (
-          <div className="text-slate-400">Loading workflow...</div>
+          <div className="text-slate-500">Loading workflow...</div>
         ) : (
           <>
+            <div className="mb-5 rounded-2xl border border-[#e8e8e4] bg-[#fbfbfa] p-4 text-sm text-slate-700">
+              <p className="font-medium text-slate-900">How to edit this workflow</p>
+              <p className="mt-2 text-slate-500">
+                Each stage represents one ordered stop in the process. The assigned team
+                becomes responsible when a task reaches that stage.
+              </p>
+            </div>
             <WorkflowForm
               key={`${workflow?._id}-${workflow?.updatedAt || "fresh"}`}
               initialValues={workflow}
@@ -101,7 +111,7 @@ export default function WorkflowDetails() {
             <div className="mt-4">
               <Link
                 to="/workflows"
-                className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300"
+                className="rounded-xl border border-[#e8e8e4] px-4 py-2 text-sm text-slate-700"
               >
                 Back to Workflows
               </Link>

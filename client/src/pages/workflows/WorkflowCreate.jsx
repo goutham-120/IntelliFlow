@@ -19,7 +19,7 @@ export default function WorkflowCreate() {
         const groupsData = await fetchGroups();
         setGroups(Array.isArray(groupsData) ? groupsData : []);
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load groups");
+        setError(err.response?.data?.message || "Failed to load teams");
       } finally {
         setLoading(false);
       }
@@ -44,20 +44,22 @@ export default function WorkflowCreate() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
-        <h1 className="text-3xl font-bold text-white">Create Workflow</h1>
-        <p className="text-sm text-slate-400">Define a new workflow and assign each stage to a group.</p>
+      <div className="rounded-[32px] border border-[#e8e8e4] bg-[radial-gradient(circle_at_top_left,rgba(216,237,230,0.9),transparent_28%),linear-gradient(180deg,#ffffff,#f9f9f7)] p-6 shadow-[0_18px_50px_rgba(17,17,17,0.06)]">
+        <h1 className="text-3xl font-bold text-slate-900">Create Workflow</h1>
+        <p className="text-sm text-slate-600">
+          Define a new workflow, tune its lifecycle, and map every stage to a responsible team.
+        </p>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-400/40 bg-red-500/20 p-3 text-red-300">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-700">
           {error}
         </div>
       )}
 
-      <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
+      <section className="rounded-[28px] border border-[#e8e8e4] bg-white p-6 shadow-[0_12px_35px_rgba(17,17,17,0.05)]">
         {loading ? (
-          <div className="text-slate-400">Loading groups...</div>
+          <div className="text-slate-500">Loading teams...</div>
         ) : (
           <>
             <WorkflowForm
@@ -71,7 +73,7 @@ export default function WorkflowCreate() {
             <div className="mt-4">
               <Link
                 to="/workflows"
-                className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300"
+                className="rounded-xl border border-[#e8e8e4] px-4 py-2 text-sm text-slate-700"
               >
                 Back to Workflows
               </Link>

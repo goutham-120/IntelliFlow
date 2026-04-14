@@ -1,12 +1,7 @@
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
+import { createServiceError } from "./serviceHelpers.js";
 import { normalizeSystemRole } from "../utils/systemRole.js";
-
-const createServiceError = (status, message) => {
-  const error = new Error(message);
-  error.status = status;
-  return error;
-};
 
 export const createUserService = async ({
   organizationId,

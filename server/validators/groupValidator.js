@@ -1,16 +1,7 @@
 import mongoose from "mongoose";
+import { isNonEmptyString, normalizeBoolean } from "./validatorHelpers.js";
 
-const isNonEmptyString = (value) =>
-  typeof value === "string" && value.trim().length > 0;
-
-const allowedRolesInGroup = ["member", "group_admin", "supervisor"];
-
-const normalizeBoolean = (value) => {
-  if (typeof value === "boolean") return value;
-  if (value === "true") return true;
-  if (value === "false") return false;
-  return null;
-};
+const allowedRolesInGroup = ["member", "team_lead"];
 
 export const validateCreateGroup = (req, res, next) => {
   const { name, code, description } = req.body;

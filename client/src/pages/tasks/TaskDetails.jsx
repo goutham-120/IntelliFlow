@@ -73,10 +73,8 @@ export default function TaskDetails() {
 
   const canCompleteStage = useMemo(() => {
     if (!task || task.status === "done") return false;
-    if (isAdmin) return true;
-    if (String(task?.assignedTo?._id || "") === currentUserId) return true;
-    return groupRole === "group_admin" || groupRole === "supervisor";
-  }, [currentUserId, groupRole, isAdmin, task]);
+    return String(task?.assignedTo?._id || "") === currentUserId;
+  }, [currentUserId, task]);
 
   const loadTaskData = useCallback(async () => {
     setLoading(true);
@@ -111,7 +109,7 @@ export default function TaskDetails() {
         );
         const roleInGroup = myMembership?.roleInGroup || "";
         setGroupRole(roleInGroup);
-        setCanManualAssign(isAdmin || roleInGroup === "group_admin");
+        setCanManualAssign(isAdmin || roleInGroup === "team_lead");
         setUsers(activeMembers);
       } else {
         setGroupRole("");
@@ -236,7 +234,7 @@ export default function TaskDetails() {
 
   const handleAssignUsingGroup = async () => {
     if (!autoAssignGroupId) {
-      setError("Select a group to assign using workload balancing");
+      setError("Select a team to assign using workload balancing");
       return;
     }
 
@@ -245,7 +243,7 @@ export default function TaskDetails() {
     setAssigningByGroup(true);
     try {
       const result = await assignTaskToGroup(autoAssignGroupId, taskId);
-      setSuccess(result?.message || "Task assigned using group balancing");
+      setSuccess(result?.message || "Task assigned using team balancing");
       await loadTaskData();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to assign task");
@@ -288,24 +286,24 @@ export default function TaskDetails() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
+      <div className="rounded-[32px] border border-[#e8e8e4] bg-[radial-gradient(circle_at_top_left,rgba(216,237,230,0.9),transparent_28%),linear-gradient(180deg,#ffffff,#f9f9f7)] p-6 shadow-[0_18px_50px_rgba(17,17,17,0.06)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-white">Task Command Center</h1>
-            <p className="text-sm text-slate-400">Task ID: {task._id}</p>
+            <h1 className="text-3xl font-bold text-slate-900">Task Command Center</h1>
+            <p className="text-sm text-slate-500">Task ID: {task._id}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleDelete}
               disabled={deleting}
-              className="rounded-xl border border-red-400/50 px-4 py-2 text-sm text-red-300 hover:bg-red-500/10 disabled:opacity-60"
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 hover:bg-red-100 disabled:opacity-60"
             >
               {deleting ? "Deleting..." : "Delete Task"}
             </button>
             <Link
               to="/tasks"
-              className="rounded-xl border border-emerald-400/50 px-4 py-2 text-sm text-emerald-300 hover:bg-emerald-500/10"
+              className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-100"
             >
               Back to Tasks
             </Link>
@@ -314,15 +312,23 @@ export default function TaskDetails() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-400/40 bg-red-500/20 p-3 text-red-300">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-700">
           {error}
         </div>
       )}
       {success && (
-        <div className="rounded-xl border border-emerald-400/40 bg-emerald-500/20 p-3 text-emerald-300">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-700">
           {success}
         </div>
       )}
+
+      <section className="rounded-[28px] border border-[#e8e8e4] bg-white p-5 text-sm text-slate-700 shadow-[0_12px_35px_rgba(17,17,17,0.05)]">
+        <p className="font-medium text-slate-900">How to use this page</p>
+        <p className="mt-2 text-slate-500">
+          The left side shows stage progress and team-based actions. The right side lets
+          you edit the task’s workflow, assignment, and status.
+        </p>
+      </section>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_2fr]">
         <div className="space-y-6">
@@ -335,17 +341,20 @@ export default function TaskDetails() {
           <TaskTimeline workflow={timelineWorkflow} task={task} />
 
           {(isAdmin || canManualAssign) && (
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
-              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">
-                Assign By Group Load
+            <section className="rounded-[28px] border border-[#e8e8e4] bg-white p-4 shadow-[0_12px_35px_rgba(17,17,17,0.05)]">
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                Assign By Team Load
               </h3>
+              <p className="mb-3 text-xs text-slate-500">
+                Use this when the task should be balanced automatically across the selected team.
+              </p>
               <div className="space-y-3">
                 <select
                   value={autoAssignGroupId}
                   onChange={(e) => setAutoAssignGroupId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white"
+                  className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-2.5 text-slate-900"
                 >
-                  <option value="">Select group</option>
+                  <option value="">Select team</option>
                   {groups.map((group) => (
                     <option key={group._id} value={group._id}>
                       {group.name}
@@ -356,7 +365,7 @@ export default function TaskDetails() {
                   type="button"
                   onClick={handleAssignUsingGroup}
                   disabled={assigningByGroup}
-                  className="w-full rounded-xl border border-emerald-400/50 px-4 py-2.5 text-sm font-medium text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-60"
+                  className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
                 >
                   {assigningByGroup ? "Assigning..." : "Auto Assign by Workload"}
                 </button>
@@ -365,17 +374,17 @@ export default function TaskDetails() {
           )}
         </div>
 
-        <section className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
+        <section className="rounded-[28px] border border-[#e8e8e4] bg-white p-6 shadow-[0_12px_35px_rgba(17,17,17,0.05)]">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-semibold text-white">Edit Task</h2>
-            <div className="inline-flex rounded-xl border border-slate-700 bg-slate-950 p-1">
+            <h2 className="text-xl font-semibold text-slate-900">Edit Task</h2>
+            <div className="inline-flex rounded-xl border border-[#e8e8e4] bg-[#f4f6f3] p-1">
               <button
                 type="button"
                 onClick={() => setMode("workflow")}
                 className={`rounded-lg px-3 py-1.5 text-sm ${
                   taskMode === "workflow"
                     ? "bg-cyan-500 text-slate-950"
-                    : "text-slate-300 hover:bg-slate-800"
+                    : "text-slate-600 hover:bg-white"
                 }`}
               >
                 Workflow Mode
@@ -386,7 +395,7 @@ export default function TaskDetails() {
                 className={`rounded-lg px-3 py-1.5 text-sm ${
                   taskMode === "standalone"
                     ? "bg-cyan-500 text-slate-950"
-                    : "text-slate-300 hover:bg-slate-800"
+                    : "text-slate-600 hover:bg-white"
                 }`}
               >
                 Standalone Mode
@@ -394,24 +403,32 @@ export default function TaskDetails() {
             </div>
           </div>
 
+          <div className="mb-4 rounded-2xl border border-[#e8e8e4] bg-[#fbfbfa] p-4 text-sm text-slate-700">
+            <p className="font-medium text-slate-900">Mode guide</p>
+            <p className="mt-2 text-slate-500">
+              Workflow mode keeps the task tied to an ordered process. Standalone mode is for
+              direct work items that only need a team or assignee.
+            </p>
+          </div>
+
           <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
             <label className="space-y-1 md:col-span-2">
-              <span className="text-sm text-slate-300">Title</span>
+              <span className="text-sm text-slate-700">Title</span>
               <input
                 type="text"
                 value={form.title}
                 onChange={(e) => setField("title", e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white"
+                className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-2.5 text-slate-900"
                 required
               />
             </label>
 
             <label className="space-y-1">
-              <span className="text-sm text-slate-300">Status</span>
+              <span className="text-sm text-slate-700">Status</span>
               <select
                 value={form.status}
                 onChange={(e) => setField("status", e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white"
+                className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-2.5 text-slate-900"
               >
                 {taskStatuses.map((status) => (
                   <option key={status} value={status}>
@@ -423,11 +440,11 @@ export default function TaskDetails() {
 
             {canManualAssign && (
               <label className="space-y-1">
-                <span className="text-sm text-slate-300">Assigned User</span>
+                <span className="text-sm text-slate-700">Assigned User</span>
                 <select
                   value={form.assignedTo}
                   onChange={(e) => setField("assignedTo", e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white"
+                  className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-2.5 text-slate-900"
                 >
                   <option value="">Unassigned</option>
                   {users.map((item) => (
@@ -442,11 +459,11 @@ export default function TaskDetails() {
             {taskMode === "workflow" ? (
               <>
                 <label className="space-y-1">
-                  <span className="text-sm text-slate-300">Workflow</span>
+                  <span className="text-sm text-slate-700">Workflow</span>
                   <select
                     value={form.workflowId}
                     onChange={(e) => handleWorkflowChange(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white"
+                    className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-2.5 text-slate-900"
                   >
                     <option value="">Select workflow</option>
                     {workflows.map((workflow) => (
@@ -458,11 +475,11 @@ export default function TaskDetails() {
                 </label>
 
                 <label className="space-y-1">
-                  <span className="text-sm text-slate-300">Stage</span>
+                  <span className="text-sm text-slate-700">Stage</span>
                   <select
                     value={form.stageName}
                     onChange={(e) => setField("stageName", e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white"
+                    className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-2.5 text-slate-900"
                   >
                     <option value="">Select stage</option>
                     {selectedWorkflowStages.map((stage) => (
@@ -475,11 +492,11 @@ export default function TaskDetails() {
               </>
             ) : (
               <label className="space-y-1 md:col-span-2">
-                <span className="text-sm text-slate-300">Assigned Group</span>
+                <span className="text-sm text-slate-700">Assigned Team</span>
                 <select
                   value={form.assignedGroupId}
                   onChange={(e) => setField("assignedGroupId", e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white"
+                  className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-2.5 text-slate-900"
                 >
                   <option value="">Unassigned</option>
                   {groups.map((group) => (
@@ -495,7 +512,7 @@ export default function TaskDetails() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-xl bg-emerald-500 px-5 py-2.5 font-semibold text-slate-950 disabled:opacity-60"
+                className="rounded-xl bg-emerald-600 px-5 py-2.5 font-semibold text-white disabled:opacity-60"
               >
                 {saving ? "Saving..." : "Save Changes"}
               </button>

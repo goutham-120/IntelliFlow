@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ToggleButton from "../common/ToggleButton";
 import WorkflowStageEditor from "./WorkflowStageEditor";
 
 const createEmptyStage = () => ({ name: "", groupId: "" });
@@ -62,7 +63,7 @@ export default function WorkflowForm({
       return;
     }
     if (normalizedStages.some((stage) => !stage.name || !stage.groupId)) {
-      setError("Each stage needs a name and group");
+      setError("Each stage needs a name and team");
       return;
     }
 
@@ -76,31 +77,28 @@ export default function WorkflowForm({
   return (
     <form onSubmit={submit} className="space-y-4">
       {error && (
-        <div className="rounded-xl border border-red-400/40 bg-red-500/20 p-3 text-sm text-red-300">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
         <input
           type="text"
           placeholder="Workflow Name"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+          className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-3 text-slate-900"
           required
           disabled={submitting}
         />
-        <label className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-300">
-          <input
-            type="checkbox"
-            checked={isActive}
-            onChange={(event) => setIsActive(event.target.checked)}
-            className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-emerald-500"
-            disabled={submitting}
-          />
-          Active workflow
-        </label>
+        <ToggleButton
+          pressed={isActive}
+          onPressedChange={setIsActive}
+          label="Active Workflow"
+          description="Inactive workflows stay visible but should not be used for new routing."
+          disabled={submitting}
+        />
       </div>
 
       <WorkflowStageEditor
@@ -115,7 +113,7 @@ export default function WorkflowForm({
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-xl bg-emerald-500 px-5 py-2 font-semibold text-slate-950 disabled:opacity-60"
+        className="rounded-xl bg-emerald-600 px-5 py-2 font-semibold text-white disabled:opacity-60"
       >
         {submitting ? "Saving..." : submitLabel}
       </button>

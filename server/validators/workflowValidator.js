@@ -1,14 +1,5 @@
 import mongoose from "mongoose";
-
-const isNonEmptyString = (value) =>
-  typeof value === "string" && value.trim().length > 0;
-
-const normalizeBoolean = (value) => {
-  if (typeof value === "boolean") return value;
-  if (value === "true") return true;
-  if (value === "false") return false;
-  return null;
-};
+import { isNonEmptyString, normalizeBoolean } from "./validatorHelpers.js";
 
 const validateAndNormalizeStages = (stages) => {
   if (!Array.isArray(stages) || stages.length === 0) {

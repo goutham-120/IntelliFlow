@@ -6,10 +6,12 @@ import {
   fetchUnreadInboxCount,
   INBOX_UPDATED_EVENT,
 } from "../../services/notificationService";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function Navbar({ sidebarOpen, setSidebarOpen }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { isLightTheme } = useTheme();
   const [openProfile, setOpenProfile] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -51,10 +53,16 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }) {
   }, [loadUnreadCount]);
 
   return (
-    <header className="sticky top-0 z-[100] flex items-center justify-between gap-4 border-b border-slate-800 bg-slate-900/80 px-6 py-4 backdrop-blur-xl md:px-8">
+    <header
+      className="sticky top-0 z-[100] flex items-center justify-between gap-4 border-b px-6 py-4 backdrop-blur-xl md:px-8  border-slate-800 bg-black"
+    >
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700 bg-slate-800/80 text-slate-200 transition hover:border-emerald-400/50 hover:text-emerald-300"
+        className={`flex h-10 w-10 items-center justify-center rounded-xl border transition hover:border-emerald-400/50 hover:text-emerald-300 ${
+          isLightTheme
+            ? "border-slate-300 bg-white text-slate-700"
+            : "border-slate-700 bg-slate-800/80 text-slate-200"
+        }`}
         aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
       >
         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5">
@@ -67,14 +75,18 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }) {
         </svg>
       </button>
 
-      <div className="truncate text-sm text-slate-400">
-        Org: <span className="text-white">{user?.orgCode}</span>
+      <div className={`truncate text-sm ${isLightTheme ? "text-slate-500" : "text-slate-400"}`}>
+        Org: <span className={"text-white"}>{user?.orgCode}</span>
       </div>
 
       <div className="relative z-[110] flex items-center gap-3">
         <Link
           to="/inbox"
-          className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700 bg-slate-800/90 text-slate-200 transition hover:border-cyan-400/50 hover:text-cyan-300"
+          className={`relative flex h-10 w-10 items-center justify-center rounded-xl border transition hover:border-cyan-400/50 hover:text-cyan-300 ${
+            isLightTheme
+              ? "border-slate-300 bg-white text-slate-700"
+              : "border-slate-700 bg-slate-800/90 text-slate-200"
+          }`}
           aria-label="Open inbox"
           title="Inbox"
         >
@@ -96,12 +108,16 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }) {
 
         <button
           onClick={() => setOpenProfile((prev) => !prev)}
-          className="group flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-800/90 px-3 py-2 transition hover:border-emerald-400/40 hover:bg-slate-800"
+          className={`group flex items-center gap-3 rounded-xl border px-3 py-2 transition hover:border-emerald-400/40 ${
+            isLightTheme
+              ? "border-slate-300 bg-white hover:bg-slate-50"
+              : "border-slate-700 bg-slate-800/90 hover:bg-slate-800"
+          }`}
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-500/15 text-sm font-semibold text-emerald-300">
             {userInitials}
           </span>
-          <span className="hidden max-w-32 truncate text-sm text-slate-200 sm:block">
+          <span className={`hidden max-w-32 truncate text-sm sm:block ${isLightTheme ? "text-slate-700" : "text-slate-200"}`}>
             {user?.name}
           </span>
           <svg
@@ -122,13 +138,17 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }) {
         </button>
 
         {openProfile && (
-          <div className="absolute right-0 top-full z-[120] mt-3 w-64 overflow-hidden rounded-2xl border border-slate-700 bg-slate-900/95 p-4 shadow-2xl">
-            <div className="mb-3 flex items-center gap-3 border-b border-slate-800 pb-3">
+          <div className={`absolute right-0 top-full z-[120] mt-3 w-64 overflow-hidden rounded-2xl border p-4 shadow-2xl ${
+            isLightTheme
+              ? "border-slate-200 bg-white/95"
+              : "border-slate-700 bg-slate-900/95"
+          }`}>
+            <div className={`mb-3 flex items-center gap-3 border-b pb-3 ${isLightTheme ? "border-slate-200" : "border-slate-800"}`}>
               <span className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-500/15 text-sm font-semibold text-emerald-300">
                 {userInitials}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-white">{user?.name}</p>
+                <p className={`truncate text-sm font-medium ${isLightTheme ? "text-slate-900" : "text-white"}`}>{user?.name}</p>
                 <p className="truncate text-xs text-slate-400">{user?.email}</p>
               </div>
             </div>

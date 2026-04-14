@@ -11,25 +11,25 @@ export default function WorkflowStageEditor({
       {stages.map((stage, index) => (
         <div
           key={`stage-${index}`}
-          className="grid gap-3 rounded-2xl border border-slate-800 bg-slate-950/60 p-3 md:grid-cols-[1fr_1fr_auto]"
+          className="grid gap-3 rounded-2xl border border-[#e8e8e4] bg-[#fbfbfa] p-3 md:grid-cols-[1fr_1fr_auto]"
         >
           <input
             type="text"
             placeholder={`Stage ${index + 1} name`}
             value={stage.name}
             onChange={(event) => onStageChange(index, "name", event.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white"
+            className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-2.5 text-slate-900"
             required
             disabled={disabled}
           />
           <select
             value={stage.groupId}
             onChange={(event) => onStageChange(index, "groupId", event.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white"
+            className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-2.5 text-slate-900"
             required
             disabled={disabled}
           >
-            <option value="">Select Group</option>
+            <option value="">Select Team</option>
             {groups.map((group) => (
               <option key={group._id} value={group._id}>
                 {group.name}
@@ -40,7 +40,7 @@ export default function WorkflowStageEditor({
             type="button"
             onClick={() => onRemoveStage(index)}
             disabled={disabled || stages.length === 1}
-            className="rounded-xl bg-slate-700 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-slate-200 px-4 py-2 text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Remove
           </button>
@@ -51,7 +51,7 @@ export default function WorkflowStageEditor({
         type="button"
         onClick={onAddStage}
         disabled={disabled}
-        className="rounded-xl bg-slate-700 px-4 py-2 text-white disabled:opacity-60"
+        className="rounded-xl bg-slate-200 px-4 py-2 text-slate-700 disabled:opacity-60"
       >
         + Add Stage
       </button>

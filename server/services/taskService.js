@@ -1,18 +1,21 @@
 import Task from "../models/Task.js";
+import User from "../models/User.js";
 import { emitTaskNotification } from "./notificationService.js";
 import {
-  buildTaskQuery,
-  canRequesterCompleteStage,
-  canRequesterManualAssign,
   createServiceError,
-  ensureActiveGroupMember,
   ensureGroupInOrg,
   ensureTaskInOrg,
   ensureUserInOrg,
   ensureWorkflowInOrg,
+  selectLeastLoadedGroupMember,
+} from "./serviceHelpers.js";
+import {
+  buildTaskQuery,
+  canRequesterCompleteStage,
+  canRequesterManualAssign,
+  ensureActiveGroupMember,
   notifyTaskReachedGroupStage,
   resolveWorkflowStage,
-  selectLeastLoadedGroupMember,
 } from "./taskService.helpers.js";
 
 export const createTaskService = async ({
@@ -58,7 +61,7 @@ export const createTaskService = async ({
         groupId: taskData.assignedGroupId,
       });
       if (!canAssign) {
-        throw createServiceError(403, "Only admin or current group admin can manually assign");
+        throw createServiceError(403, "Only admin or current team lead can manually assign");
       }
       await ensureActiveGroupMember({
         organizationId,
@@ -201,7 +204,7 @@ export const updateTaskService = async ({
       groupId: task.assignedGroupId,
     });
     if (!canAssign) {
-      throw createServiceError(403, "Only admin or current group admin can manually assign");
+      throw createServiceError(403, "Only admin or current team lead can manually assign");
     }
 
     if (assignedTo === null) {
@@ -301,13 +304,12 @@ export const completeTaskStageService = async ({
     organizationId,
     requesterId,
     requesterRole,
-    assignedGroupId: task.assignedGroupId,
     assignedTo: task.assignedTo,
   });
   if (!canComplete) {
     throw createServiceError(
       403,
-      "Only assignee, group admin, supervisor, or admin can complete this stage"
+      "Only the user assigned to the current stage can complete it"
     );
   }
 
@@ -330,12 +332,18 @@ export const completeTaskStageService = async ({
     task.status = "done";
     await task.save();
 
+    const admins = await User.find({
+      organizationId: task.organizationId,
+      role: "admin",
+      isActive: true,
+    }).select("_id");
+
     await emitTaskNotification({
       organizationId: task.organizationId,
       taskId: task._id,
       type: "task_completed",
-      recipientUserIds: task.assignedTo ? [task.assignedTo] : [],
-      message: `Task "${task.title}" has been completed`,
+      recipientUserIds: admins.map((admin) => admin._id),
+      message: `Workflow task "${task.title}" has been fully completed`,
     });
 
     return {

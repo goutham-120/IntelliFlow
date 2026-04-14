@@ -3,10 +3,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "../pages/home/Home";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
+import AnalyticsDashboard from "../pages/analytics/AnalyticsDashboard";
+import AuditLogs from "../pages/audit/AuditLogs";
 import Dashboard from "../pages/dashboard/Dashboard";
 import Inbox from "../pages/inbox/Inbox";
 import UserManagement from "../pages/org/UserManagement";
 import GroupManagement from "../pages/org/GroupManagement";
+import OrgSettings from "../pages/org/OrgSettings";
+import SLADashboard from "../pages/sla/SLADashboard";
 import TeamManagement from "../pages/org/TeamManagement";
 import WorkflowList from "../pages/workflows/WorkflowList";
 import WorkflowCreate from "../pages/workflows/WorkflowCreate";
@@ -96,11 +100,19 @@ export default function AppRoutes() {
           />
           <Route
             path="/sla"
-            element={<div className="text-white">SLA Monitor Module</div>}
+            element={
+              <RoleGuard allowedRoles={["admin", "user"]}>
+                <SLADashboard />
+              </RoleGuard>
+            }
           />
           <Route
             path="/analytics"
-            element={<div className="text-white">Analytics Module</div>}
+            element={
+              <RoleGuard allowedRoles={["admin", "user"]}>
+                <AnalyticsDashboard />
+              </RoleGuard>
+            }
           />
           <Route
             path="/users"
@@ -128,11 +140,19 @@ export default function AppRoutes() {
           />
           <Route
             path="/audit"
-            element={<div className="text-white">Audit Logs Module</div>}
+            element={
+              <RoleGuard allowedRoles={["admin"]}>
+                <AuditLogs />
+              </RoleGuard>
+            }
           />
           <Route
             path="/org-settings"
-            element={<div className="text-white">Organization Settings</div>}
+            element={
+              <RoleGuard allowedRoles={["admin"]}>
+                <OrgSettings />
+              </RoleGuard>
+            }
           />
         </Route>
       </Routes>

@@ -1,4 +1,5 @@
 import api from "./api";
+import { emitInboxUpdated } from "./notificationService";
 
 export const fetchTasks = async (params = {}) => {
   const response = await api.get("/tasks", { params });
@@ -12,11 +13,13 @@ export const fetchTaskById = async (taskId) => {
 
 export const createTask = async (data) => {
   const response = await api.post("/tasks", data);
+  emitInboxUpdated();
   return response.data;
 };
 
 export const updateTask = async (taskId, data) => {
   const response = await api.patch(`/tasks/${taskId}`, data);
+  emitInboxUpdated();
   return response.data;
 };
 
@@ -27,5 +30,6 @@ export const deleteTask = async (taskId) => {
 
 export const completeTaskStage = async (taskId) => {
   const response = await api.post(`/tasks/${taskId}/complete-stage`);
+  emitInboxUpdated();
   return response.data;
 };
