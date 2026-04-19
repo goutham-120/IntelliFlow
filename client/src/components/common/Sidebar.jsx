@@ -23,7 +23,6 @@ export default function Sidebar({ sidebarOpen }) {
   const adminItems = [
     { name: "User Management", path: "/users" },
     { name: "Audit Logs", path: "/audit" },
-    { name: "Org Settings", path: "/org-settings" },
   ];
 
   // Final menu based on role
@@ -107,14 +106,6 @@ export default function Sidebar({ sidebarOpen }) {
         </svg>
       );
     }
-    if (name === "Org Settings") {
-      return (
-        <svg viewBox="0 0 24 24" fill="none" className={iconClass}>
-          <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7Zm8-3.5a8 8 0 0 0-.1-1l2.1-1.6-2-3.5-2.5 1a8 8 0 0 0-1.7-1l-.4-2.7H8.6l-.4 2.7a8 8 0 0 0-1.7 1l-2.5-1-2 3.5L4.1 11a8 8 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1l.4 2.7h6.8l.4-2.7c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5-2.1-1.6c.1-.3.1-.7.1-1Z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      );
-    }
-
     return null;
   };
 
@@ -122,57 +113,81 @@ export default function Sidebar({ sidebarOpen }) {
     <aside
       className={`${
         sidebarOpen ? "w-72" : "w-24"
-      } shrink-0 h-screen sticky top-0 transition-[width] duration-300 ease-in-out border-r backdrop-blur-xl px-3 py-5 ${
-        isLightTheme
-          ? "bg-black border-slate-200/80"
-          : "bg-slate-900/70 border-slate-800/80"
-      }`}
+      } sticky top-0 z-20 h-screen shrink-0 px-3 py-4 transition-[width] duration-300 ease-in-out md:px-4 md:py-5`}
     >
-      <div className="mb-10 flex items-center gap-3 px-2">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-400/30 bg-blue-500/10 text-white">
-          <span className="font-bold">IF</span>
-        </div>
+      <div
+        className={`flex h-full flex-col rounded-[30px] border py-5 ${
+          isLightTheme
+            ? "border-slate-700/70 bg-slate-950/72 shadow-[0_18px_40px_rgba(2,6,23,0.28)] backdrop-blur-2xl"
+            : "border-slate-800/80 bg-slate-950/75 backdrop-blur-2xl"
+        }`}
+      >
         <div
-          className={`transition-all duration-200 ${
-            sidebarOpen ? "max-w-[140px] opacity-100" : "max-w-0 opacity-0"
-          } overflow-hidden whitespace-nowrap`}
+          className={`mb-8 flex items-center ${
+            sidebarOpen ? "gap-3 px-4" : "justify-center px-0"
+          }`}
         >
-          <h1 className="text-lg font-semibold tracking-wide text-white">
-            IntelliFlow
-          </h1>
-          <p className="text-xs text-white">Workflow System</p>
-        </div>
-      </div>
-
-      <nav className="space-y-1">
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            title={!sidebarOpen ? item.name : undefined}
-            className={({ isActive }) =>
-              `group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 ${
-                isActive
-                  ? "bg-white text-black ring-1 border-green-700 ring-green-600/10"
-                 
-                  : "text-white hover:bg-slate-100 hover:text-slate-900"
-          
-              }`
-            }
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#0f766e,#14b8a6_48%,#67e8f9)] text-sm font-extrabold text-white shadow-[0_10px_22px_rgba(20,184,166,0.22)]">
+            FN
+          </div>
+          <div
+            className={`transition-all duration-200 ${
+              sidebarOpen ? "max-w-[140px] opacity-100" : "max-w-0 opacity-0"
+            } overflow-hidden whitespace-nowrap`}
           >
-            <span className={`${isLightTheme ? "text-slate-400" : "text-slate-400"} group-hover:text-emerald-300`}>
-              {getItemIcon(item.name)}
-            </span>
-            <span
-              className={`overflow-hidden whitespace-nowrap transition-all duration-200 ${
-                sidebarOpen ? "max-w-[160px] opacity-100" : "max-w-0 opacity-0"
-              }`}
+            <h1 className={`font-display text-lg font-bold tracking-tight ${isLightTheme ? "text-white" : "text-white"}`}>
+              FlowNova
+            </h1>
+            <p className={`text-xs ${isLightTheme ? "text-slate-400" : "text-slate-400"}`}>
+              Operations workspace
+            </p>
+          </div>
+        </div>
+
+        {sidebarOpen && (
+          <div className={`mb-3 px-3 text-[11px] font-semibold uppercase tracking-[0.24em] ${isLightTheme ? "text-slate-500" : "text-slate-500"}`}>
+            Workspace
+          </div>
+        )}
+
+        <nav className={`space-y-1.5 ${sidebarOpen ? "px-3" : "px-2"}`}>
+          {menuItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              title={!sidebarOpen ? item.name : undefined}
+              className={({ isActive }) =>
+                `group flex items-center rounded-2xl py-3 transition-all duration-200 ${
+                  sidebarOpen ? "gap-3 px-3 justify-start" : "justify-center px-0"
+                } ${
+                  isActive
+                  ? isLightTheme
+                      ? "bg-[linear-gradient(135deg,rgba(20,184,166,0.22),rgba(56,189,248,0.14))] text-white ring-1 ring-teal-300/25 shadow-[0_12px_24px_rgba(8,15,31,0.24)]"
+                      : "bg-emerald-500/15 text-white ring-1 ring-emerald-400/25"
+                    : isLightTheme
+                    ? "text-slate-300 hover:bg-white/6 hover:text-white"
+                    : "text-slate-300 hover:bg-slate-900 hover:text-white"
+                }`
+              }
             >
-              {item.name}
-            </span>
-          </NavLink>
-        ))}
-      </nav>
+              <span
+                className={`shrink-0 text-current transition-colors ${
+                  sidebarOpen ? "" : "rounded-2xl border border-transparent p-2 group-hover:border-white/10"
+                }`}
+              >
+                {getItemIcon(item.name)}
+              </span>
+              <span
+                className={`overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-200 ${
+                  sidebarOpen ? "max-w-[160px] opacity-100" : "max-w-0 opacity-0"
+                }`}
+              >
+                {item.name}
+              </span>
+            </NavLink>
+          ))}
+        </nav>
+      </div>
     </aside>
   );
 }

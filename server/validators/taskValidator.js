@@ -1,7 +1,14 @@
 import mongoose from "mongoose";
 import { isNonEmptyString, normalizeNullableObjectId } from "./validatorHelpers.js";
 
-const allowedStatuses = ["pending", "in_progress", "done", "blocked"];
+const allowedStatuses = [
+  "pending",
+  "in_progress",
+  "done",
+  "blocked",
+  "rejected",
+  "needs_changes",
+];
 
 const validateStatus = (status) => {
   if (status === undefined) return { ok: true };

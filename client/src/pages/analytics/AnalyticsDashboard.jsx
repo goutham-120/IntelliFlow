@@ -11,7 +11,7 @@ const formatPercent = (value) => `${Number(value || 0).toFixed(1)}%`;
 
 function PerformanceTable({ title, rows = [] }) {
   return (
-    <section className="overflow-hidden rounded-3xl border border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.88))] p-5 shadow-[0_12px_40px_rgba(0,0,0,0.2)]">
+    <section className="overflow-hidden rounded-[28px] border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.08),transparent_26%),linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.88))] p-5 shadow-[0_18px_45px_rgba(2,6,23,0.24)]">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-lg font-semibold text-white">{title}</h3>
         <span className="rounded-full border border-slate-700 px-3 py-1 text-xs uppercase tracking-[0.18em] text-slate-400">
@@ -26,17 +26,17 @@ function PerformanceTable({ title, rows = [] }) {
             <thead className="bg-slate-800/70 text-xs uppercase tracking-wide text-slate-400">
               <tr>
                 <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Total</th>
-                <th className="px-4 py-3">Completed</th>
-                <th className="px-4 py-3">Active</th>
+                <th className="px-4 py-3">Total Contributions</th>
+                <th className="px-4 py-3">Completed Stages</th>
+                <th className="px-4 py-3">Current Active</th>
                 <th className="px-4 py-3">Blocked</th>
                 <th className="px-4 py-3">Completion Rate</th>
-                <th className="px-4 py-3">Avg Completion</th>
+                <th className="px-4 py-3">Avg Stage Time</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.name} className="border-t border-slate-800 hover:bg-slate-800/40">
+                <tr key={row.name} className="border-t border-slate-800 hover:bg-slate-800/35">
                   <td className="px-4 py-3 font-medium text-white">{row.name}</td>
                   <td className="px-4 py-3">{row.totalTasks}</td>
                   <td className="px-4 py-3 text-emerald-300">{row.completedTasks}</td>
@@ -87,10 +87,10 @@ export default function AnalyticsDashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-slate-800 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.12),transparent_28%),linear-gradient(120deg,rgba(15,23,42,0.96),rgba(15,23,42,0.82),rgba(8,47,73,0.5))] p-6 shadow-[0_14px_50px_rgba(0,0,0,0.22)]">
-        <p className="text-xs uppercase tracking-[0.22em] text-cyan-300/80">Operations Signal</p>
+      <section className="rounded-[32px] border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.12),transparent_26%),radial-gradient(circle_at_right,rgba(56,189,248,0.12),transparent_22%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,24,39,0.84))] p-6 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
+        <p className="text-xs uppercase tracking-[0.22em] text-sky-200/80">Operations Signal</p>
         <h1 className="mt-2 text-3xl font-bold text-white">Analytics Dashboard</h1>
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-2 text-sm text-slate-300">
           Live organizational analytics powered by backend aggregation across workflows,
           stages, teams, and employee ownership.
         </p>
@@ -109,7 +109,7 @@ export default function AnalyticsDashboard() {
             {summaryCards.map(([label, value]) => (
               <article
                 key={label}
-                className="rounded-3xl border border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] p-5 shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
+                className="rounded-[26px] border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.08),transparent_28%),linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] p-5 shadow-[0_14px_34px_rgba(2,6,23,0.22)]"
               >
                 <p className="text-sm text-slate-400">{label}</p>
                 <p className="mt-3 text-3xl font-bold text-white">{value}</p>
@@ -122,7 +122,7 @@ export default function AnalyticsDashboard() {
             <PieChart title="Workflow Composition" data={data.workflowMixData} />
             <LineChart title="Stage Pressure" data={data.stageLoadData} />
 
-            <section className="rounded-3xl border border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] p-5 shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
+            <section className="rounded-[28px] border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.08),transparent_26%),linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] p-5 shadow-[0_18px_45px_rgba(2,6,23,0.24)]">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-white">Recent Task Activity</h3>
                 <span className="rounded-full border border-slate-700 px-3 py-1 text-xs uppercase tracking-[0.18em] text-slate-400">
@@ -133,13 +133,13 @@ export default function AnalyticsDashboard() {
                 {data.latestTasks.map((task) => (
                   <article
                     key={task._id}
-                    className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-400/30"
+                    className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-sky-400/30"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-medium text-white">{task.title}</p>
                         <p className="mt-1 text-sm text-slate-400">
-                          {task.stageName || "Unstaged"} • {task.status}
+                          {task.stageName || "Unstaged"} - {task.status}
                         </p>
                       </div>
                       <p className="text-xs text-slate-500">{formatDateTime(task.createdAt)}</p>
@@ -151,11 +151,19 @@ export default function AnalyticsDashboard() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <BarChart title="Team Workload" data={data.teamLoadData} />
-            <BarChart title="Employee Workload" data={data.employeeLoadData} />
+            <BarChart title="Team Contribution Load" data={data.teamLoadData} />
+            <BarChart title="Employee Contribution Load" data={data.employeeLoadData} />
           </div>
 
           <div className="grid gap-6">
+            <section className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-5 text-sm text-slate-300 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
+              <p className="font-medium text-white">How these metrics are calculated</p>
+              <p className="mt-2 text-slate-400">
+                Team and employee analytics now count every completed workflow stage plus the
+                task&apos;s current active owner, so multi-stage work is credited across all teams
+                and people who actually worked on it.
+              </p>
+            </section>
             <PerformanceTable title="Team Performance" rows={data.teamPerformance} />
             <PerformanceTable title="Employee Performance" rows={data.employeePerformance} />
           </div>

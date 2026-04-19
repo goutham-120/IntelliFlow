@@ -9,7 +9,6 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import Inbox from "../pages/inbox/Inbox";
 import UserManagement from "../pages/org/UserManagement";
 import GroupManagement from "../pages/org/GroupManagement";
-import OrgSettings from "../pages/org/OrgSettings";
 import SLADashboard from "../pages/sla/SLADashboard";
 import TeamManagement from "../pages/org/TeamManagement";
 import WorkflowList from "../pages/workflows/WorkflowList";
@@ -143,14 +142,6 @@ export default function AppRoutes() {
             element={
               <RoleGuard allowedRoles={["admin"]}>
                 <AuditLogs />
-              </RoleGuard>
-            }
-          />
-          <Route
-            path="/org-settings"
-            element={
-              <RoleGuard allowedRoles={["admin"]}>
-                <OrgSettings />
               </RoleGuard>
             }
           />

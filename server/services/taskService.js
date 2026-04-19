@@ -16,6 +16,7 @@ import {
   ensureActiveGroupMember,
   notifyTaskReachedGroupStage,
   resolveWorkflowStage,
+  resolveTaskWorkflowStage,
 } from "./taskService.helpers.js";
 
 export const createTaskService = async ({
@@ -45,6 +46,7 @@ export const createTaskService = async ({
 
     taskData.workflowId = workflow._id;
     taskData.stageName = matchedStage.name;
+    taskData.stageOrder = matchedStage.order;
     taskData.assignedGroupId = matchedStage.groupId;
   } else if (assignedGroupId) {
     await ensureGroupInOrg({ organizationId, groupId: assignedGroupId });
@@ -160,6 +162,8 @@ export const updateTaskService = async ({
   const task = await ensureTaskInOrg({ organizationId, taskId });
   const previousAssignedGroupId = task.assignedGroupId ? String(task.assignedGroupId) : null;
   const previousStageName = task.stageName;
+  let workflow = null;
+  let stageMovedByStatus = false;
 
   if (title !== undefined) task.title = title;
   if (status !== undefined) task.status = status;
@@ -167,19 +171,24 @@ export const updateTaskService = async ({
   const nextWorkflowId = workflowId !== undefined ? workflowId : task.workflowId;
 
   if (nextWorkflowId) {
-    const workflow = await ensureWorkflowInOrg({ organizationId, workflowId: nextWorkflowId });
+    workflow = await ensureWorkflowInOrg({ organizationId, workflowId: nextWorkflowId });
     const nextStageName = stageName !== undefined ? stageName : task.stageName;
+    const nextStageOrder =
+      stageName === undefined && workflowId === undefined ? task.stageOrder : undefined;
     const matchedStage = resolveWorkflowStage({
       workflow,
       stageName: nextStageName || undefined,
+      stageOrder: nextStageOrder,
     });
 
     task.workflowId = workflow._id;
     task.stageName = matchedStage.name;
+    task.stageOrder = matchedStage.order;
     task.assignedGroupId = matchedStage.groupId;
   } else if (workflowId !== undefined && workflowId === null) {
     task.workflowId = null;
     task.stageName = "";
+    task.stageOrder = null;
     if (assignedGroupId === undefined) {
       task.assignedGroupId = null;
     }
@@ -194,6 +203,26 @@ export const updateTaskService = async ({
 
   if (stageName !== undefined && !nextWorkflowId) {
     throw createServiceError(400, "stageName can be updated only when workflow is attached");
+  }
+
+  if (task.workflowId && status !== undefined && ["rejected", "needs_changes"].includes(status)) {
+    if (!workflow) {
+      workflow = await ensureWorkflowInOrg({ organizationId, workflowId: task.workflowId });
+    }
+    const { stages, currentStageIndex } = resolveTaskWorkflowStage({ workflow, task });
+    const targetStageIndex = Math.max(0, currentStageIndex - 1);
+    const targetStage = stages[targetStageIndex];
+
+    task.stageName = targetStage.name;
+    task.stageOrder = targetStage.order;
+    task.assignedGroupId = targetStage.groupId;
+    task.completedStages = (task.completedStages || []).filter((entry) => {
+      const matchedStage = stages.find(
+        (stage) => stage.name.toLowerCase() === String(entry.stageName || "").toLowerCase()
+      );
+      return matchedStage ? matchedStage.order < targetStage.order : false;
+    });
+    stageMovedByStatus = true;
   }
 
   if (assignedTo !== undefined) {
@@ -223,7 +252,7 @@ export const updateTaskService = async ({
   } else {
     const currentAssignedGroupId = task.assignedGroupId ? String(task.assignedGroupId) : null;
     const groupChanged = currentAssignedGroupId !== previousAssignedGroupId;
-    if (task.assignedGroupId && (groupChanged || !task.assignedTo)) {
+    if (task.assignedGroupId && (groupChanged || !task.assignedTo || stageMovedByStatus)) {
       const selectedMember = await selectLeastLoadedGroupMember({
         organizationId,
         groupId: task.assignedGroupId,
@@ -288,17 +317,7 @@ export const completeTaskStageService = async ({
   }
 
   const workflow = await ensureWorkflowInOrg({ organizationId, workflowId: task.workflowId });
-  const stages = [...(workflow.stages || [])].sort((a, b) => a.order - b.order);
-  if (!stages.length) {
-    throw createServiceError(400, "Workflow has no stages");
-  }
-
-  const currentStageIndex = stages.findIndex(
-    (stage) => stage.name.toLowerCase() === String(task.stageName || "").toLowerCase()
-  );
-  if (currentStageIndex < 0) {
-    throw createServiceError(400, "Current task stage is invalid for this workflow");
-  }
+  const { stages, currentStageIndex, currentStage } = resolveTaskWorkflowStage({ workflow, task });
 
   const canComplete = await canRequesterCompleteStage({
     organizationId,
@@ -313,7 +332,6 @@ export const completeTaskStageService = async ({
     );
   }
 
-  const currentStage = stages[currentStageIndex];
   const completionEntry = {
     stageName: currentStage.name,
     completedBy: requesterId,
@@ -356,6 +374,7 @@ export const completeTaskStageService = async ({
   }
 
   task.stageName = nextStage.name;
+  task.stageOrder = nextStage.order;
   task.assignedGroupId = nextStage.groupId;
   const selectedMember = await selectLeastLoadedGroupMember({
     organizationId,

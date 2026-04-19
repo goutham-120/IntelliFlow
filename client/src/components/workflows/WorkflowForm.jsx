@@ -88,7 +88,7 @@ export default function WorkflowForm({
           placeholder="Workflow Name"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className="w-full rounded-xl border border-[#e8e8e4] bg-white px-4 py-3 text-slate-900"
+          className="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
           required
           disabled={submitting}
         />
@@ -98,6 +98,7 @@ export default function WorkflowForm({
           label="Active Workflow"
           description="Inactive workflows stay visible but should not be used for new routing."
           disabled={submitting}
+          variant="dark"
         />
       </div>
 
@@ -113,7 +114,7 @@ export default function WorkflowForm({
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-xl bg-emerald-600 px-5 py-2 font-semibold text-white disabled:opacity-60"
+        className="rounded-xl bg-[linear-gradient(135deg,#0f766e,#10b981)] px-5 py-2 font-semibold text-white shadow-[0_12px_24px_rgba(16,185,129,0.18)] transition hover:brightness-105 disabled:opacity-60"
       >
         {submitting ? "Saving..." : submitLabel}
       </button>

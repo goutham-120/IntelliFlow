@@ -13,7 +13,7 @@ export default function Pagination({
         type="button"
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
-        className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+        className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-200 transition hover:border-slate-600 hover:bg-slate-900 disabled:opacity-50"
       >
         Prev
       </button>
@@ -24,8 +24,8 @@ export default function Pagination({
           onClick={() => onPageChange(item)}
           className={`rounded-xl px-3 py-2 text-sm ${
             item === page
-              ? "bg-emerald-500 font-semibold text-slate-950"
-              : "border border-slate-700 text-slate-300 hover:bg-slate-800"
+              ? "bg-teal-400 font-semibold text-slate-950"
+              : "border border-slate-700 bg-slate-950/70 text-slate-200 transition hover:border-slate-600 hover:bg-slate-900"
           }`}
         >
           {item}
@@ -35,7 +35,7 @@ export default function Pagination({
         type="button"
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
-        className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+        className="rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-200 transition hover:border-slate-600 hover:bg-slate-900 disabled:opacity-50"
       >
         Next
       </button>

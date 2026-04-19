@@ -232,6 +232,12 @@ export const assignTaskToGroupService = async ({
   if (!task) {
     throw createServiceError(404, "Task not found");
   }
+  if (!task.assignedGroupId) {
+    throw createServiceError(400, "Task must already belong to a team before workload balancing");
+  }
+  if (String(task.assignedGroupId) !== String(groupId)) {
+    throw createServiceError(400, "Workload balancing is allowed only for the task's current team");
+  }
 
   const selectedMembership = await selectLeastLoadedMemberService({
     organizationId,

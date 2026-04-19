@@ -17,6 +17,11 @@ const taskSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    stageOrder: {
+      type: Number,
+      default: null,
+      min: 1,
+    },
     assignedGroupId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Group",
@@ -34,7 +39,7 @@ const taskSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "in_progress", "done", "blocked"],
+      enum: ["pending", "in_progress", "done", "blocked", "rejected", "needs_changes"],
       default: "pending",
     },
     completedStages: {

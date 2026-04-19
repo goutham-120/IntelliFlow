@@ -59,14 +59,14 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-8">
-      <div className="rounded-[32px] border border-[#e8e8e4] bg-[radial-gradient(circle_at_top_left,rgba(216,237,230,0.9),transparent_28%),linear-gradient(180deg,#ffffff,#f9f9f7)] p-6 shadow-[0_18px_50px_rgba(17,17,17,0.06)]">
+      <div className="rounded-[32px] border border-slate-700/80 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.14),transparent_28%),radial-gradient(circle_at_right,rgba(56,189,248,0.12),transparent_20%),linear-gradient(135deg,rgba(15,23,42,0.95),rgba(17,24,39,0.84))] p-6 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-emerald-700/80">
+            <p className="text-xs uppercase tracking-[0.22em] text-teal-200/80">
               Access Management
             </p>
-            <h1 className="mt-2 text-3xl font-bold text-slate-900">User Management</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-600">
+            <h1 className="mt-2 text-3xl font-bold text-white">User Management</h1>
+            <p className="mt-2 max-w-2xl text-sm text-slate-300">
               Add operational users to the organization. These users can join teams,
               receive tasks, and participate in workflows.
             </p>
@@ -81,7 +81,7 @@ export default function UserManagement() {
         </div>
       </div>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      {/* <section className="grid gap-4 md:grid-cols-3">
         <article className="rounded-[28px] border border-[#e8e8e4] bg-white p-5 shadow-[0_12px_35px_rgba(17,17,17,0.05)]">
           <p className="text-sm text-slate-500">Total Users</p>
           <p className="mt-3 text-3xl font-bold text-slate-900">{users.length}</p>
@@ -97,21 +97,21 @@ export default function UserManagement() {
             assigned after a user account exists.
           </p>
         </article>
-      </section>
+      </section> */}
 
       {error && (
-        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700">
+        <div className="rounded-xl border border-red-400/30 bg-red-500/12 p-3 text-red-200">
           {error}
         </div>
       )}
 
       {/* Users Table */}
-      <div className="bg-white border border-[#e8e8e4] rounded-[28px] overflow-hidden shadow-[0_12px_35px_rgba(17,17,17,0.05)]">
+      <div className="overflow-hidden rounded-[28px] border border-slate-700/80 bg-slate-950/72 shadow-[0_18px_45px_rgba(2,6,23,0.24)] backdrop-blur-xl">
         {loading ? (
           <div className="p-6"><Loader label="Loading users..." /></div>
         ) : (
-          <table className="w-full text-left text-slate-700">
-            <thead className="bg-[#f4f6f3] text-slate-500 text-sm">
+          <table className="w-full text-left text-slate-200">
+            <thead className="bg-slate-900/90 text-sm text-slate-400">
               <tr>
                 <th className="p-4">Name</th>
                 <th className="p-4">Email</th>
@@ -123,16 +123,16 @@ export default function UserManagement() {
               {users.map((user) => (
                 <tr
                   key={user._id}
-                  className="border-t border-[#eef0ec] hover:bg-[#fbfbfa] transition"
+                  className="border-t border-slate-800/80 transition hover:bg-white/5"
                 >
-                  <td className="p-4">{user.name}</td>
-                  <td className="p-4">{user.email}</td>
-                  <td className="p-4 capitalize">{user.role}</td>
+                  <td className="p-4 text-white">{user.name}</td>
+                  <td className="p-4 text-slate-300">{user.email}</td>
+                  <td className="p-4 capitalize text-slate-200">{user.role}</td>
                   <td className="p-4">
                     <span className={`rounded-full px-2.5 py-1 text-xs ${
                       user?.isActive === false
-                        ? "bg-slate-200 text-slate-600"
-                        : "bg-emerald-100 text-emerald-700"
+                        ? "bg-slate-800 text-slate-300"
+                        : "bg-teal-400/16 text-teal-200"
                     }`}>
                       {user?.isActive === false ? "inactive" : "active"}
                     </span>

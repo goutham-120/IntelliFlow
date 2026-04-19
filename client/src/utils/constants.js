@@ -1,6 +1,8 @@
 export const TASK_STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
   { value: "in_progress", label: "In Progress" },
+  { value: "needs_changes", label: "Needs Changes" },
+  { value: "rejected", label: "Rejected" },
   { value: "done", label: "Done" },
   { value: "blocked", label: "Blocked" },
 ];

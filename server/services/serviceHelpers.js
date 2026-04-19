@@ -52,7 +52,7 @@ export const selectLeastLoadedGroupMember = async ({
       load: await Task.countDocuments({
         organizationId,
         assignedTo: membership.userId._id,
-        status: { $in: ["pending", "in_progress", "blocked"] },
+        status: { $in: ["pending", "in_progress", "blocked", "rejected", "needs_changes"] },
       }),
     }))
   );

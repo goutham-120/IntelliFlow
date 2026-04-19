@@ -68,34 +68,34 @@ export default function WorkflowDetails() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-[32px] border border-[#e8e8e4] bg-[radial-gradient(circle_at_top_left,rgba(216,237,230,0.9),transparent_28%),linear-gradient(180deg,#ffffff,#f9f9f7)] p-6 shadow-[0_18px_50px_rgba(17,17,17,0.06)]">
-        <h1 className="text-3xl font-bold text-slate-900">Workflow Details</h1>
-        <p className="text-sm text-slate-600">
+    <div className="space-y-8">
+      <div className="rounded-[32px] border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.14),transparent_28%),radial-gradient(circle_at_right,rgba(56,189,248,0.12),transparent_22%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,24,39,0.84))] p-6 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
+        <h1 className="text-3xl font-bold text-white">Workflow Details</h1>
+        <p className="text-sm text-slate-300">
           Review stage sequence, team ownership, and whether this workflow should stay
           active for new tasks.
         </p>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-700">
+        <div className="rounded-2xl border border-rose-400/30 bg-rose-500/12 p-3 text-rose-200">
           {error}
         </div>
       )}
       {success && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-700">
+        <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/12 p-3 text-emerald-200">
           {success}
         </div>
       )}
 
-      <section className="rounded-[28px] border border-[#e8e8e4] bg-white p-6 shadow-[0_12px_35px_rgba(17,17,17,0.05)]">
+      <section className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-6 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
         {loading ? (
-          <div className="text-slate-500">Loading workflow...</div>
+          <div className="text-slate-400">Loading workflow...</div>
         ) : (
           <>
-            <div className="mb-5 rounded-2xl border border-[#e8e8e4] bg-[#fbfbfa] p-4 text-sm text-slate-700">
-              <p className="font-medium text-slate-900">How to edit this workflow</p>
-              <p className="mt-2 text-slate-500">
+            <div className="mb-5 rounded-2xl border border-slate-800/90 bg-slate-950/70 p-4 text-sm text-slate-300">
+              <p className="font-medium text-white">How to edit this workflow</p>
+              <p className="mt-2 text-slate-400">
                 Each stage represents one ordered stop in the process. The assigned team
                 becomes responsible when a task reaches that stage.
               </p>
@@ -111,7 +111,7 @@ export default function WorkflowDetails() {
             <div className="mt-4">
               <Link
                 to="/workflows"
-                className="rounded-xl border border-[#e8e8e4] px-4 py-2 text-sm text-slate-700"
+                className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-2 text-sm text-slate-300 transition hover:border-slate-500 hover:bg-slate-900"
               >
                 Back to Workflows
               </Link>

@@ -11,71 +11,156 @@ const daysAgo = (days) => {
   return value;
 };
 
-const buildPerformancePipeline = ({ matchStage, lookupStage, nameField, limit }) => [
-  { $match: matchStage },
-  lookupStage,
-  {
-    $project: {
-      ownerName: {
-        $ifNull: [{ $arrayElemAt: [nameField, 0] }, "Unassigned"],
-      },
-      status: 1,
-      createdAt: 1,
-      updatedAt: 1,
-    },
-  },
-  {
-    $group: {
-      _id: "$ownerName",
-      totalTasks: { $sum: 1 },
-      completedTasks: {
-        $sum: { $cond: [{ $eq: ["$status", "done"] }, 1, 0] },
-      },
-      activeTasks: {
-        $sum: {
-          $cond: [{ $in: ["$status", ACTIVE_TASK_STATUSES] }, 1, 0],
+const createPerformanceEntry = (name) => ({
+  name,
+  totalTasks: 0,
+  completedTasks: 0,
+  activeTasks: 0,
+  blockedTasks: 0,
+  totalCompletionMs: 0,
+});
+
+const getOrCreatePerformanceEntry = (collection, key, name) => {
+  const existing = collection.get(key);
+  if (existing) return existing;
+
+  const created = createPerformanceEntry(name);
+  collection.set(key, created);
+  return created;
+};
+
+const finalizePerformanceEntries = (entries) => {
+  const mapped = entries.map((entry) => ({
+    name: entry.name,
+    totalTasks: entry.totalTasks,
+    completedTasks: entry.completedTasks,
+    activeTasks: entry.activeTasks,
+    blockedTasks: entry.blockedTasks,
+    completionRate:
+      entry.totalTasks > 0 ? Number(((entry.completedTasks / entry.totalTasks) * 100).toFixed(1)) : 0,
+    avgCompletionHours:
+      entry.completedTasks > 0
+        ? Number((entry.totalCompletionMs / entry.completedTasks / (1000 * 60 * 60)).toFixed(1))
+        : 0,
+  }));
+
+  mapped.sort((a, b) => {
+    if (b.completionRate !== a.completionRate) return b.completionRate - a.completionRate;
+    if (b.completedTasks !== a.completedTasks) return b.completedTasks - a.completedTasks;
+    if (b.totalTasks !== a.totalTasks) return b.totalTasks - a.totalTasks;
+    return a.name.localeCompare(b.name);
+  });
+
+  return mapped;
+};
+
+const buildStageContributionMetrics = ({ tasks, groups }) => {
+  const groupsById = new Map(
+    groups.map((group) => [String(group._id), { name: group.name, isActive: group.isActive }])
+  );
+
+  const teamPerformanceMap = new Map(
+    groups
+      .filter((group) => group.isActive)
+      .map((group) => [String(group._id), createPerformanceEntry(group.name)])
+  );
+  const employeePerformanceMap = new Map();
+
+  tasks.forEach((task) => {
+    const workflowStages = [...(task.workflowId?.stages || [])].sort((a, b) => a.order - b.order);
+    const stageDetailsByName = new Map(
+      workflowStages.map((stage) => [
+        String(stage.name || "").trim().toLowerCase(),
+        {
+          order: stage.order,
+          groupId: stage.groupId ? String(stage.groupId) : "",
         },
-      },
-      blockedTasks: {
-        $sum: { $cond: [{ $eq: ["$status", "blocked"] }, 1, 0] },
-      },
-      totalCompletionMs: {
-        $sum: {
-          $cond: [
-            { $eq: ["$status", "done"] },
-            { $subtract: ["$updatedAt", "$createdAt"] },
-            0,
-          ],
-        },
-      },
-    },
-  },
-  {
-    $addFields: {
-      completionRate: {
-        $cond: [
-          { $eq: ["$totalTasks", 0] },
-          0,
-          { $multiply: [{ $divide: ["$completedTasks", "$totalTasks"] }, 100] },
-        ],
-      },
-      avgCompletionHours: {
-        $cond: [
-          { $eq: ["$completedTasks", 0] },
-          0,
-          {
-            $divide: [
-              { $divide: ["$totalCompletionMs", "$completedTasks"] },
-              1000 * 60 * 60,
-            ],
-          },
-        ],
-      },
-    },
-  },
-  { $sort: { completionRate: -1, completedTasks: -1, totalTasks: -1, _id: 1 } },
-  { $limit: limit },
-];
+      ])
+    );
+
+    const completedStages = [...(task.completedStages || [])]
+      .map((entry) => {
+        const stageKey = String(entry.stageName || "").trim().toLowerCase();
+        const stageDetails = stageDetailsByName.get(stageKey);
+        return {
+          ...entry,
+          stageOrder: stageDetails?.order ?? Number.MAX_SAFE_INTEGER,
+          stageGroupId: stageDetails?.groupId || "",
+        };
+      })
+      .sort((a, b) => {
+        if (a.stageOrder !== b.stageOrder) return a.stageOrder - b.stageOrder;
+        return new Date(a.completedAt) - new Date(b.completedAt);
+      });
+
+    let previousCompletedAt = new Date(task.createdAt);
+    completedStages.forEach((entry) => {
+      const completedAt = new Date(entry.completedAt);
+      const durationMs = Math.max(0, completedAt - previousCompletedAt);
+      previousCompletedAt = completedAt;
+
+      if (entry.stageGroupId) {
+        const groupMeta = groupsById.get(entry.stageGroupId);
+        const teamEntry = getOrCreatePerformanceEntry(
+          teamPerformanceMap,
+          entry.stageGroupId,
+          groupMeta?.name || "Unknown Team"
+        );
+        teamEntry.totalTasks += 1;
+        teamEntry.completedTasks += 1;
+        teamEntry.totalCompletionMs += durationMs;
+      }
+
+      const completedById = entry.completedBy?._id ? String(entry.completedBy._id) : "";
+      if (completedById) {
+        const employeeEntry = getOrCreatePerformanceEntry(
+          employeePerformanceMap,
+          completedById,
+          entry.completedBy.name || "Unknown User"
+        );
+        employeeEntry.totalTasks += 1;
+        employeeEntry.completedTasks += 1;
+        employeeEntry.totalCompletionMs += durationMs;
+      }
+    });
+
+    if (task.status !== "done" && ACTIVE_TASK_STATUSES.includes(task.status)) {
+      const currentGroupId = task.assignedGroupId?._id ? String(task.assignedGroupId._id) : "";
+      if (currentGroupId) {
+        const groupMeta = groupsById.get(currentGroupId);
+        const teamEntry = getOrCreatePerformanceEntry(
+          teamPerformanceMap,
+          currentGroupId,
+          groupMeta?.name || task.assignedGroupId?.name || "Unknown Team"
+        );
+        teamEntry.totalTasks += 1;
+        teamEntry.activeTasks += 1;
+        if (task.status === "blocked") {
+          teamEntry.blockedTasks += 1;
+        }
+      }
+
+      const currentUserId = task.assignedTo?._id ? String(task.assignedTo._id) : "";
+      if (currentUserId) {
+        const employeeEntry = getOrCreatePerformanceEntry(
+          employeePerformanceMap,
+          currentUserId,
+          task.assignedTo?.name || "Unknown User"
+        );
+        employeeEntry.totalTasks += 1;
+        employeeEntry.activeTasks += 1;
+        if (task.status === "blocked") {
+          employeeEntry.blockedTasks += 1;
+        }
+      }
+    }
+  });
+
+  return {
+    teamPerformance: finalizePerformanceEntries(Array.from(teamPerformanceMap.values())),
+    employeePerformance: finalizePerformanceEntries(Array.from(employeePerformanceMap.values())),
+  };
+};
 
 export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays = 14 }) => {
   const createdAfter = daysAgo(Number(lookbackDays) || 14);
@@ -88,14 +173,11 @@ export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays 
     totalGroups,
     totalUsers,
     unreadNotifications,
+    groups,
     recentTasks,
-    teamPerformance,
-    employeePerformance,
+    tasksForContributionMetrics,
   ] = await Promise.all([
-    Task.aggregate([
-      { $match: { organizationId } },
-      { $group: { _id: "$status", count: { $sum: 1 } } },
-    ]),
+    Task.aggregate([{ $match: { organizationId } }, { $group: { _id: "$status", count: { $sum: 1 } } }]),
     Task.aggregate([
       { $match: { organizationId } },
       {
@@ -137,40 +219,16 @@ export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays 
     Group.countDocuments({ organizationId, isActive: true }),
     User.countDocuments({ organizationId, isActive: true }),
     Notification.countDocuments({ organizationId, isRead: false }),
+    Group.find({ organizationId }).select("name isActive"),
     Task.find({ organizationId, createdAt: { $gte: createdAfter } })
       .select("title status stageName createdAt updatedAt")
       .sort({ createdAt: -1 })
       .limit(8),
-    Task.aggregate(
-      buildPerformancePipeline({
-        matchStage: { organizationId, assignedGroupId: { $ne: null } },
-        lookupStage: {
-          $lookup: {
-            from: "groups",
-            localField: "assignedGroupId",
-            foreignField: "_id",
-            as: "owner",
-          },
-        },
-        nameField: "$owner.name",
-        limit: 8,
-      })
-    ),
-    Task.aggregate(
-      buildPerformancePipeline({
-        matchStage: { organizationId, assignedTo: { $ne: null } },
-        lookupStage: {
-          $lookup: {
-            from: "users",
-            localField: "assignedTo",
-            foreignField: "_id",
-            as: "owner",
-          },
-        },
-        nameField: "$owner.name",
-        limit: 10,
-      })
-    ),
+    Task.find({ organizationId })
+      .populate("workflowId", "name stages")
+      .populate("assignedGroupId", "name")
+      .populate("assignedTo", "name")
+      .populate("completedStages.completedBy", "name"),
   ]);
 
   const tasksByStatus = taskCounts.reduce(
@@ -183,6 +241,11 @@ export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays 
     (sum, status) => sum + (tasksByStatus[status] || 0),
     0
   );
+
+  const { teamPerformance, employeePerformance } = buildStageContributionMetrics({
+    tasks: tasksForContributionMetrics,
+    groups,
+  });
 
   return {
     status: 200,
@@ -210,31 +273,15 @@ export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays 
         value: entry.count,
       })),
       teamLoadData: teamPerformance.map((entry) => ({
-        label: entry._id,
+        label: entry.name,
         value: entry.totalTasks,
       })),
       employeeLoadData: employeePerformance.map((entry) => ({
-        label: entry._id,
+        label: entry.name,
         value: entry.totalTasks,
       })),
-      teamPerformance: teamPerformance.map((entry) => ({
-        name: entry._id,
-        totalTasks: entry.totalTasks,
-        completedTasks: entry.completedTasks,
-        activeTasks: entry.activeTasks,
-        blockedTasks: entry.blockedTasks,
-        completionRate: Number(entry.completionRate?.toFixed(1) || 0),
-        avgCompletionHours: Number(entry.avgCompletionHours?.toFixed(1) || 0),
-      })),
-      employeePerformance: employeePerformance.map((entry) => ({
-        name: entry._id,
-        totalTasks: entry.totalTasks,
-        completedTasks: entry.completedTasks,
-        activeTasks: entry.activeTasks,
-        blockedTasks: entry.blockedTasks,
-        completionRate: Number(entry.completionRate?.toFixed(1) || 0),
-        avgCompletionHours: Number(entry.avgCompletionHours?.toFixed(1) || 0),
-      })),
+      teamPerformance,
+      employeePerformance,
       recentTasks,
     },
   };

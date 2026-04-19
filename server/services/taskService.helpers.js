@@ -90,10 +90,23 @@ export const notifyTaskReachedGroupStage = async ({ task, stageName, groupId, as
   }
 };
 
-export const resolveWorkflowStage = ({ workflow, stageName }) => {
+export const getSortedWorkflowStages = (workflow) => {
   const sortedStages = [...(workflow.stages || [])].sort((a, b) => a.order - b.order);
   if (!sortedStages.length) {
     throw createServiceError(400, "Workflow has no stages");
+  }
+  return sortedStages;
+};
+
+export const resolveWorkflowStage = ({ workflow, stageName, stageOrder }) => {
+  const sortedStages = getSortedWorkflowStages(workflow);
+
+  if (stageOrder !== undefined && stageOrder !== null) {
+    const matchedByOrder = sortedStages.find((stage) => stage.order === Number(stageOrder));
+    if (!matchedByOrder) {
+      throw createServiceError(400, "Provided stageOrder does not exist in the workflow");
+    }
+    return matchedByOrder;
   }
 
   if (!stageName) {
@@ -106,6 +119,34 @@ export const resolveWorkflowStage = ({ workflow, stageName }) => {
     throw createServiceError(400, "Provided stageName does not exist in the workflow");
   }
   return matched;
+};
+
+export const resolveTaskWorkflowStage = ({ workflow, task }) => {
+  const stages = getSortedWorkflowStages(workflow);
+  const normalizedStageName = String(task.stageName || "").trim().toLowerCase();
+  const numericStageOrder =
+    task.stageOrder === undefined || task.stageOrder === null ? null : Number(task.stageOrder);
+
+  let currentStageIndex = -1;
+  if (numericStageOrder !== null && !Number.isNaN(numericStageOrder)) {
+    currentStageIndex = stages.findIndex((stage) => stage.order === numericStageOrder);
+  }
+
+  if (currentStageIndex < 0 && normalizedStageName) {
+    currentStageIndex = stages.findIndex(
+      (stage) => stage.name.toLowerCase() === normalizedStageName
+    );
+  }
+
+  if (currentStageIndex < 0) {
+    throw createServiceError(400, "Current task stage is invalid for this workflow");
+  }
+
+  return {
+    stages,
+    currentStageIndex,
+    currentStage: stages[currentStageIndex],
+  };
 };
 
 export const buildTaskQuery = ({ organizationId, status, workflowId, assignedTo, onlyMine, userId }) => {
