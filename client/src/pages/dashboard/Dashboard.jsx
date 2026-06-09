@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import Loader from "../../components/common/Loader";
-import { useTheme } from "../../context/ThemeContext";
 import useAuth from "../../hooks/useAuth";
 import { fetchUserGroups } from "../../services/groupService";
 import { fetchInboxNotifications } from "../../services/notificationService";
@@ -19,42 +18,65 @@ const toTitle = (value) =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 
-function StatCard({ title, value, hint, tone = "emerald", isLightTheme }) {
-  const toneClass = isLightTheme
-    ? tone === "cyan"
-      ? "text-sky-300"
-      : tone === "amber"
-      ? "text-amber-300"
-      : tone === "rose"
-      ? "text-fuchsia-300"
-      : "text-teal-300"
-    : tone === "cyan"
-    ? "text-cyan-300"
-    : tone === "amber"
-    ? "text-amber-300"
-    : tone === "rose"
-    ? "text-rose-300"
-    : "text-emerald-300";
+const TONE_CLASSES = {
+  emerald: "text-emerald-400",
+  cyan: "text-cyan-400",
+  amber: "text-amber-400",
+  rose: "text-rose-400",
+};
 
+const cardClass = "rounded-2xl border border-slate-800 bg-slate-900/80 p-5";
+
+// ─── Shared small components ──────────────────────────────────────────────────
+function StatCard({ title, value, hint, tone = "emerald" }) {
   return (
-    <article
-      className={`rounded-[28px] border p-6 ${
-        isLightTheme
-          ? "border-slate-700/80 bg-slate-950/72 shadow-[0_18px_45px_rgba(2,6,23,0.24)] backdrop-blur-xl"
-          : "border-slate-800 bg-slate-900/60"
-      }`}
-    >
-      <p className={`text-sm font-medium ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>{title}</p>
-      <p className={`mt-4 text-3xl font-extrabold ${toneClass}`}>{value}</p>
-      <p className={`mt-2 text-xs ${isLightTheme ? "text-slate-400" : "text-slate-500"}`}>{hint}</p>
+    <article className={cardClass}>
+      <p className="text-sm text-slate-400">{title}</p>
+      <p className={`mt-3 text-3xl font-bold ${TONE_CLASSES[tone]}`}>{value}</p>
+      <p className="mt-2 text-xs text-slate-500">{hint}</p>
     </article>
   );
 }
 
+function SectionCard({ title, linkTo, linkLabel, children }) {
+  return (
+    <section className={cardClass}>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-white">{title}</h2>
+        {linkTo && (
+          <Link to={linkTo} className="text-sm text-emerald-400 hover:underline">
+            {linkLabel}
+          </Link>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function EmptyState({ children }) {
+  return <p className="text-sm text-slate-400">{children}</p>;
+}
+
+function Row({ children }) {
+  return <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">{children}</article>;
+}
+
+function Pill({ children, tone = "default" }) {
+  const toneClass =
+    tone === "unread"
+      ? "bg-emerald-500/20 text-emerald-300"
+      : tone === "read"
+        ? "bg-slate-800 text-slate-400"
+        : "border border-slate-700 bg-slate-950/75 text-slate-300";
+  return <span className={`rounded-full px-2.5 py-1 text-xs capitalize ${toneClass}`}>{children}</span>;
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { user } = useAuth();
-  const { isLightTheme } = useTheme();
   const userId = user?.id || user?._id || "";
+
   const [tasks, setTasks] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [memberships, setMemberships] = useState([]);
@@ -77,23 +99,9 @@ export default function Dashboard() {
           fetchUserGroups(userId),
         ]);
 
-        if (taskResult.status === "fulfilled") {
-          setTasks(Array.isArray(taskResult.value) ? taskResult.value : []);
-        } else {
-          setTasks([]);
-        }
-
-        if (inboxResult.status === "fulfilled") {
-          setNotifications(Array.isArray(inboxResult.value) ? inboxResult.value : []);
-        } else {
-          setNotifications([]);
-        }
-
-        if (groupsResult.status === "fulfilled") {
-          setMemberships(Array.isArray(groupsResult.value) ? groupsResult.value : []);
-        } else {
-          setMemberships([]);
-        }
+        setTasks(taskResult.status === "fulfilled" && Array.isArray(taskResult.value) ? taskResult.value : []);
+        setNotifications(inboxResult.status === "fulfilled" && Array.isArray(inboxResult.value) ? inboxResult.value : []);
+        setMemberships(groupsResult.status === "fulfilled" && Array.isArray(groupsResult.value) ? groupsResult.value : []);
 
         if (taskResult.status === "rejected" && inboxResult.status === "rejected") {
           const fallbackError = taskResult.reason || inboxResult.reason;
@@ -119,15 +127,12 @@ export default function Dashboard() {
         .filter((entry) => toId(entry.completedBy?._id || entry.completedBy) === myUserId)
         .map((entry) => ({
           taskId: task._id,
-          taskTitle: task.title,
           stageName: entry.stageName || "Unnamed Stage",
-          completedAt: entry.completedAt,
         }))
     );
 
     const stageBreakdownMap = myStageEntries.reduce((acc, entry) => {
-      const key = entry.stageName;
-      acc.set(key, (acc.get(key) || 0) + 1);
+      acc.set(entry.stageName, (acc.get(entry.stageName) || 0) + 1);
       return acc;
     }, new Map());
 
@@ -139,59 +144,32 @@ export default function Dashboard() {
     const unreadNotifications = notifications.filter((item) => !item.isRead).length;
 
     return {
-      myTasks,
       myActiveTasks,
       myStageEntries,
       stageBreakdown,
       unreadNotifications,
       contributedTaskCount: contributedTaskIds.size,
-      recentMyTasks: [...myTasks].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)).slice(0, 6),
+      recentMyTasks: [...myTasks]
+        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+        .slice(0, 6),
     };
   }, [notifications, tasks, userId]);
 
   const summaryCards = useMemo(
     () => [
-      {
-        title: "My Active Tasks",
-        value: myMetrics.myActiveTasks.length,
-        hint: "Tasks currently requiring your action",
-        tone: "emerald",
-      },
-      {
-        title: "Stage Completions",
-        value: myMetrics.myStageEntries.length,
-        hint: "Total stage handoffs completed by you",
-        tone: "cyan",
-      },
-      {
-        title: "Team Memberships",
-        value: memberships.length,
-        hint: "Teams where you currently contribute",
-        tone: "amber",
-      },
-      {
-        title: "Unread Alerts",
-        value: myMetrics.unreadNotifications,
-        hint: "Inbox items waiting for your review",
-        tone: "rose",
-      },
+      { title: "My Active Tasks", value: myMetrics.myActiveTasks.length, hint: "Tasks currently requiring your action", tone: "emerald" },
+      { title: "Stage Completions", value: myMetrics.myStageEntries.length, hint: "Total stage handoffs completed by you", tone: "cyan" },
+      { title: "Team Memberships", value: memberships.length, hint: "Teams where you currently contribute", tone: "amber" },
+      { title: "Unread Alerts", value: myMetrics.unreadNotifications, hint: "Inbox items waiting for your review", tone: "rose" },
     ],
     [memberships.length, myMetrics]
   );
 
-  if (loading) {
-    return <Loader label="Loading your dashboard..." />;
-  }
+  if (loading) return <Loader label="Loading your dashboard..." />;
 
   if (error) {
     return (
-      <div
-        className={`rounded-2xl border p-4 ${
-          isLightTheme
-            ? "border-rose-200 bg-rose-50 text-rose-700"
-            : "border-rose-400/40 bg-rose-500/15 text-rose-200"
-        }`}
-      >
+      <div className="rounded-2xl border border-rose-400/40 bg-rose-500/15 p-4 text-sm text-rose-200">
         {error}
       </div>
     );
@@ -199,226 +177,122 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <section
-        className={`overflow-hidden rounded-[34px] border p-7 ${
-          isLightTheme
-            ? "border-slate-700/80 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.16),transparent_28%),radial-gradient(circle_at_right,rgba(56,189,248,0.12),transparent_24%),linear-gradient(135deg,rgba(15,23,42,0.95),rgba(17,24,39,0.82))] shadow-[0_24px_60px_rgba(2,6,23,0.28)] backdrop-blur-2xl"
-            : "border-slate-800 bg-[radial-gradient(circle_at_top_left,rgba(52,211,153,0.16),transparent_30%),linear-gradient(120deg,rgba(15,23,42,0.96),rgba(15,23,42,0.82),rgba(8,47,73,0.45))] shadow-[0_14px_50px_rgba(0,0,0,0.22)]"
-        }`}
-      >
+      {/* Header */}
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className={`text-xs font-semibold uppercase tracking-[0.28em] ${isLightTheme ? "text-teal-200/90" : "text-emerald-300/80"}`}>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-400/80">
               Personal Workspace
             </p>
-            <h1 className="mt-3 font-display text-4xl font-bold text-white md:text-5xl">
+            <h1 className="mt-3 text-3xl font-bold text-white md:text-4xl">
               Welcome back, {user?.name || "Teammate"}.
             </h1>
-            <p className={`mt-4 max-w-2xl text-sm leading-7 ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
               This view is focused on your role, team memberships, stage contributions, and
               tasks you currently own.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <span className="rounded-full border border-slate-700 bg-slate-950/65 px-3 py-1 text-xs uppercase tracking-wide text-slate-300">
-              Role: {toTitle(user?.role)}
-            </span>
-            <span className="rounded-full border border-slate-700 bg-slate-950/65 px-3 py-1 text-xs uppercase tracking-wide text-slate-300">
-              Org: {user?.orgCode || "--"}
-            </span>
-            <span className="rounded-full border border-slate-700 bg-slate-950/65 px-3 py-1 text-xs uppercase tracking-wide text-slate-300">
-              Contributed Tasks: {myMetrics.contributedTaskCount}
-            </span>
+            <Pill>Role: {toTitle(user?.role)}</Pill>
+            <Pill>Org: {user?.orgCode || "--"}</Pill>
+            <Pill>Contributed Tasks: {myMetrics.contributedTaskCount}</Pill>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* Stat cards */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {summaryCards.map((card) => (
-          <StatCard key={card.title} {...card} isLightTheme={isLightTheme} />
+          <StatCard key={card.title} {...card} />
         ))}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-2">
-        <div
-          className={`rounded-[28px] border p-5 ${
-            isLightTheme
-              ? "border-slate-700/80 bg-slate-950/72 shadow-[0_18px_45px_rgba(2,6,23,0.24)] backdrop-blur-xl"
-              : "border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
-          }`}
-        >
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-white">My Teams</h2>
-            <Link to="/teams" className={`text-sm ${isLightTheme ? "text-teal-300" : "text-emerald-300"} hover:underline`}>
-              Open Teams
-            </Link>
-          </div>
+      {/* My Teams + Stage Contributions */}
+      <section className="grid gap-4 xl:grid-cols-2">
+        <SectionCard title="My Teams" linkTo="/teams" linkLabel="Open Teams">
           {!memberships.length ? (
-            <p className={`text-sm ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
-              You are not assigned to any teams yet.
-            </p>
+            <EmptyState>You are not assigned to any teams yet.</EmptyState>
           ) : (
             <div className="space-y-3">
               {memberships.map((membership) => (
-                <article
-                  key={membership._id}
-                  className={`rounded-2xl border px-4 py-3 ${
-                    isLightTheme
-                      ? "border-slate-700/80 bg-slate-900/72"
-                      : "border-slate-800 bg-slate-950/70"
-                  }`}
-                >
+                <Row key={membership._id}>
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="font-medium text-white">{membership.groupId?.name || "Unnamed Team"}</p>
-                      <p className={`text-xs ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
-                        {membership.groupId?.code || "--"}
-                      </p>
+                      <p className="text-xs text-slate-400">{membership.groupId?.code || "--"}</p>
                     </div>
-                    <span className="rounded-full border border-slate-700 bg-slate-950/75 px-2.5 py-1 text-xs capitalize text-slate-300">
-                      {toTitle(membership.roleInGroup)}
-                    </span>
+                    <Pill>{toTitle(membership.roleInGroup)}</Pill>
                   </div>
-                </article>
+                </Row>
               ))}
             </div>
           )}
-        </div>
+        </SectionCard>
 
-        <div
-          className={`rounded-[28px] border p-5 ${
-            isLightTheme
-              ? "border-slate-700/80 bg-slate-950/72 shadow-[0_18px_45px_rgba(2,6,23,0.24)] backdrop-blur-xl"
-              : "border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
-          }`}
-        >
-          <h2 className="text-lg font-semibold text-white">Stage Contribution Breakdown</h2>
+        <SectionCard title="Stage Contribution Breakdown">
           {!myMetrics.stageBreakdown.length ? (
-            <p className={`mt-4 text-sm ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
-              No completed stage contributions from your account yet.
-            </p>
+            <EmptyState>No completed stage contributions from your account yet.</EmptyState>
           ) : (
-            <div className="mt-4 space-y-3">
+            <div className="space-y-3">
               {myMetrics.stageBreakdown.slice(0, 6).map((entry) => (
-                <div
-                  key={entry.stageName}
-                  className={`flex items-center justify-between rounded-2xl border px-4 py-3 ${
-                    isLightTheme
-                      ? "border-slate-700/80 bg-slate-900/72"
-                      : "border-slate-800 bg-slate-950/70"
-                  }`}
-                >
-                  <p className="text-sm text-white">{entry.stageName}</p>
-                  <span className={`text-sm font-semibold ${isLightTheme ? "text-teal-300" : "text-emerald-300"}`}>
-                    {entry.count}
-                  </span>
-                </div>
+                <Row key={entry.stageName}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-white">{entry.stageName}</p>
+                    <span className="text-sm font-semibold text-emerald-400">{entry.count}</span>
+                  </div>
+                </Row>
               ))}
             </div>
           )}
-        </div>
+        </SectionCard>
       </section>
 
-      <section
-        className={`rounded-[28px] border p-5 ${
-          isLightTheme
-            ? "border-slate-700/80 bg-slate-950/72 shadow-[0_18px_45px_rgba(2,6,23,0.24)] backdrop-blur-xl"
-            : "border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
-        }`}
-      >
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-white">My Assigned Tasks</h2>
-          <Link to="/tasks" className={`text-sm ${isLightTheme ? "text-teal-300" : "text-emerald-300"} hover:underline`}>
-            Open Tasks
-          </Link>
-        </div>
+      {/* My Tasks */}
+      <SectionCard title="My Assigned Tasks" linkTo="/tasks" linkLabel="Open Tasks">
         {!myMetrics.recentMyTasks.length ? (
-          <p className={`text-sm ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
-            You do not have assigned tasks yet.
-          </p>
+          <EmptyState>You do not have assigned tasks yet.</EmptyState>
         ) : (
           <div className="space-y-3">
             {myMetrics.recentMyTasks.map((task) => (
-              <article
-                key={task._id}
-                className={`rounded-2xl border p-4 ${
-                  isLightTheme
-                    ? "border-slate-700/80 bg-slate-900/72"
-                    : "border-slate-800 bg-slate-950/70"
-                }`}
-              >
+              <Row key={task._id}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="font-medium text-white">{task.title}</p>
-                  <span className="rounded-full border border-slate-700 bg-slate-950/75 px-2.5 py-1 text-xs text-slate-300">
-                    {toTitle(task.status)}
-                  </span>
+                  <Pill>{toTitle(task.status)}</Pill>
                 </div>
-                <p className={`mt-2 text-xs ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
+                <p className="mt-2 text-xs text-slate-400">
                   Stage: {task.stageName || "Unstaged"} | Updated: {formatDateTime(task.updatedAt)}
                 </p>
-              </article>
+              </Row>
             ))}
           </div>
         )}
-      </section>
+      </SectionCard>
 
-      <section
-        className={`rounded-[28px] border p-5 ${
-          isLightTheme
-            ? "border-slate-700/80 bg-slate-950/72 shadow-[0_18px_45px_rgba(2,6,23,0.24)] backdrop-blur-xl"
-            : "border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
-        }`}
-      >
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-white">Recent Inbox Activity</h2>
-          <Link to="/inbox" className={`text-sm ${isLightTheme ? "text-teal-300" : "text-emerald-300"} hover:underline`}>
-            Open Inbox
-          </Link>
-        </div>
+      {/* Inbox */}
+      <SectionCard title="Recent Inbox Activity" linkTo="/inbox" linkLabel="Open Inbox">
         {!notifications.length ? (
-          <p className={`text-sm ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
-            No recent notifications found.
-          </p>
+          <EmptyState>No recent notifications found.</EmptyState>
         ) : (
           <div className="space-y-3">
             {notifications.map((notification) => (
-              <article
-                key={notification._id}
-                className={`rounded-2xl border p-4 ${
-                  isLightTheme
-                    ? "border-slate-700/80 bg-slate-900/72"
-                    : "border-slate-800 bg-slate-950/70"
-                }`}
-              >
+              <Row key={notification._id}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm text-white">{notification.message}</p>
-                    <p className={`mt-2 text-xs uppercase tracking-wide ${isLightTheme ? "text-slate-400" : "text-slate-500"}`}>
+                    <p className="mt-2 text-xs uppercase tracking-wide text-slate-500">
                       {notification.type}
                     </p>
                   </div>
-                  <span
-                    className={`rounded-full px-2 py-1 text-[11px] ${
-                      notification.isRead
-                        ? isLightTheme
-                          ? "bg-slate-800 text-slate-300"
-                          : "bg-slate-800 text-slate-400"
-                        : isLightTheme
-                        ? "bg-teal-400/16 text-teal-200"
-                        : "bg-emerald-500/20 text-emerald-200"
-                    }`}
-                  >
+                  <Pill tone={notification.isRead ? "read" : "unread"}>
                     {notification.isRead ? "Read" : "Unread"}
-                  </span>
+                  </Pill>
                 </div>
-                <p className={`mt-3 text-xs ${isLightTheme ? "text-slate-400" : "text-slate-500"}`}>
-                  {formatDateTime(notification.createdAt)}
-                </p>
-              </article>
+                <p className="mt-3 text-xs text-slate-500">{formatDateTime(notification.createdAt)}</p>
+              </Row>
             ))}
           </div>
         )}
-      </section>
+      </SectionCard>
     </div>
   );
 }
