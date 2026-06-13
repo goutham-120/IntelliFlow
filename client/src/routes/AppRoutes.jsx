@@ -9,7 +9,6 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import Inbox from "../pages/inbox/Inbox";
 import UserManagement from "../pages/org/UserManagement";
 import GroupManagement from "../pages/org/GroupManagement";
-import SLADashboard from "../pages/sla/SLADashboard";
 import TeamManagement from "../pages/org/TeamManagement";
 import WorkflowList from "../pages/workflows/WorkflowList";
 import WorkflowCreate from "../pages/workflows/WorkflowCreate";
@@ -98,17 +97,9 @@ export default function AppRoutes() {
             }
           />
           <Route
-            path="/sla"
-            element={
-              <RoleGuard allowedRoles={["admin", "user"]}>
-                <SLADashboard />
-              </RoleGuard>
-            }
-          />
-          <Route
             path="/analytics"
             element={
-              <RoleGuard allowedRoles={["admin", "user"]}>
+              <RoleGuard allowedRoles={["admin"]}>
                 <AnalyticsDashboard />
               </RoleGuard>
             }

@@ -6,6 +6,7 @@ export default function TaskTable({
   loading = false,
   updatingTaskId = "",
   onQuickStatusUpdate,
+  canEditTasks = false,
 }) {
   if (loading) {
     return <div className="p-6 text-slate-400">Loading tasks...</div>;
@@ -25,23 +26,29 @@ export default function TaskTable({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 className="text-base font-semibold text-white">{task.title}</h3>
             <div className="flex items-center gap-2">
-              <select
-                value={task.status}
-                onChange={(event) => onQuickStatusUpdate(task._id, event.target.value)}
-                disabled={updatingTaskId === task._id}
-                className="rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs uppercase text-slate-300 disabled:opacity-60"
-              >
-                {TASK_STATUS_OPTIONS.map((status) => (
-                  <option key={status.value} value={status.value}>
-                    {status.value}
-                  </option>
-                ))}
-              </select>
+              {canEditTasks ? (
+                <select
+                  value={task.status}
+                  onChange={(event) => onQuickStatusUpdate(task._id, event.target.value)}
+                  disabled={updatingTaskId === task._id}
+                  className="rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs uppercase text-slate-300 disabled:opacity-60"
+                >
+                  {TASK_STATUS_OPTIONS.map((status) => (
+                    <option key={status.value} value={status.value}>
+                      {status.value}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs uppercase text-slate-300">
+                  {task.status}
+                </span>
+              )}
               <Link
                 to={`/tasks/${task._id}`}
                 className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-200 transition hover:bg-emerald-500/16"
               >
-                View / Edit
+                {canEditTasks ? "View / Edit" : "View"}
               </Link>
             </div>
           </div>
@@ -60,7 +67,9 @@ export default function TaskTable({
             </span>
           </div>
           <p className="text-xs text-slate-500">
-            Open the task to edit workflow mode, assignments, stage progression, or deletion.
+            {canEditTasks
+              ? "Open the task to edit workflow mode, assignments, stage progression, or deletion."
+              : "Open the task to review workflow stage progress and available stage actions."}
           </p>
         </div>
       ))}

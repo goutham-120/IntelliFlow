@@ -6,11 +6,13 @@ import {
   deleteTask,
   getTaskById,
   getTasks,
+  rejectTaskStage,
   updateTask,
 } from "../controllers/taskController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { authorizeRoles } from "../middleware/rbacMiddleware.js";
 import {
+  validateCompleteTaskStage,
   validateCreateTask,
   validateTaskIdParam,
   validateTaskQuery,
@@ -31,7 +33,7 @@ router.get(
 router.patch(
   "/:taskId",
   protect,
-  authorizeRoles("admin", "user"),
+  authorizeRoles("admin"),
   validateTaskIdParam,
   validateUpdateTask,
   updateTask
@@ -41,12 +43,21 @@ router.post(
   protect,
   authorizeRoles("admin", "user"),
   validateTaskIdParam,
+  validateCompleteTaskStage,
   completeTaskStage
+);
+router.post(
+  "/:taskId/reject-stage",
+  protect,
+  authorizeRoles("admin", "user"),
+  validateTaskIdParam,
+  validateCompleteTaskStage,
+  rejectTaskStage
 );
 router.delete(
   "/:taskId",
   protect,
-  authorizeRoles("admin", "user"),
+  authorizeRoles("admin"),
   validateTaskIdParam,
   deleteTask
 );

@@ -44,10 +44,14 @@ export const validateTaskQuery = (req, res, next) => {
 };
 
 export const validateCreateTask = (req, res, next) => {
-  const { title, status, workflowId, stageName, assignedGroupId, assignedTo } = req.body;
+  const { title, description, status, workflowId, stageName, assignedGroupId, assignedTo } =
+    req.body;
 
   if (!isNonEmptyString(title)) {
     return res.status(400).json({ message: "Task title is required" });
+  }
+  if (description !== undefined && description !== null && !isNonEmptyString(description)) {
+    return res.status(400).json({ message: "Invalid task description" });
   }
 
   const parsedStatus = validateStatus(status);
@@ -81,6 +85,7 @@ export const validateCreateTask = (req, res, next) => {
   }
 
   req.body.title = title.trim();
+  if (description !== undefined) req.body.description = description === null ? "" : description.trim();
   req.body.workflowId = normalizedWorkflowId;
   req.body.assignedGroupId = normalizedAssignedGroupId;
   req.body.assignedTo = normalizedAssignedTo;
@@ -90,10 +95,12 @@ export const validateCreateTask = (req, res, next) => {
 };
 
 export const validateUpdateTask = (req, res, next) => {
-  const { title, status, workflowId, stageName, assignedGroupId, assignedTo } = req.body;
+  const { title, description, status, workflowId, stageName, assignedGroupId, assignedTo } =
+    req.body;
 
   if (
     title === undefined &&
+    description === undefined &&
     status === undefined &&
     workflowId === undefined &&
     stageName === undefined &&
@@ -108,6 +115,13 @@ export const validateUpdateTask = (req, res, next) => {
       return res.status(400).json({ message: "Invalid task title" });
     }
     req.body.title = title.trim();
+  }
+
+  if (description !== undefined) {
+    if (description !== null && !isNonEmptyString(description)) {
+      return res.status(400).json({ message: "Invalid task description" });
+    }
+    req.body.description = description === null ? "" : description.trim();
   }
 
   const parsedStatus = validateStatus(status);
@@ -148,6 +162,27 @@ export const validateUpdateTask = (req, res, next) => {
       return res.status(400).json({ message: "Invalid stageName" });
     }
     req.body.stageName = stageName === null ? null : stageName.trim();
+  }
+
+  next();
+};
+
+export const validateCompleteTaskStage = (req, res, next) => {
+  const { preferredUserId, description } = req.body || {};
+
+  if (preferredUserId !== undefined) {
+    const normalizedPreferredUserId = normalizeNullableObjectId(preferredUserId);
+    if (
+      normalizedPreferredUserId !== null &&
+      !mongoose.isValidObjectId(normalizedPreferredUserId)
+    ) {
+      return res.status(400).json({ message: "Invalid preferredUserId" });
+    }
+    req.body.preferredUserId = normalizedPreferredUserId;
+  }
+
+  if (description !== undefined) {
+    req.body.description = description === null ? "" : description.trim();
   }
 
   next();

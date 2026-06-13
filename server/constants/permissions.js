@@ -12,7 +12,6 @@ export const PERMISSIONS = Object.freeze({
   INBOX_VIEW: "inbox:view",
   ANALYTICS_VIEW: "analytics:view",
   AUDIT_VIEW: "audit:view",
-  SLA_VIEW: "sla:view",
   ORG_SETTINGS_VIEW: "org_settings:view",
   ORG_SETTINGS_MANAGE: "org_settings:manage",
 });
@@ -27,8 +26,6 @@ export const ROLE_PERMISSIONS = Object.freeze({
     PERMISSIONS.TASKS_ASSIGN,
     PERMISSIONS.TASKS_COMPLETE_STAGE,
     PERMISSIONS.INBOX_VIEW,
-    PERMISSIONS.ANALYTICS_VIEW,
-    PERMISSIONS.SLA_VIEW,
   ]),
 });
 

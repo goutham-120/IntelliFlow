@@ -11,7 +11,7 @@ export const createUserService = async ({
   role,
 }) => {
   const normalizedRole = normalizeSystemRole(role);
-  if (normalizedRole !== "user") {
+  if (!normalizedRole) {
     throw createServiceError(400, "Invalid role");
   }
 
@@ -73,5 +73,44 @@ export const getUsersService = async ({ organizationId }) => {
   return {
     status: 200,
     payload,
+  };
+};
+
+// ─── NEW: Activate / Deactivate a user ────────────────────────────────────────
+//
+// We never hard-delete users (preserves task/workflow history & references).
+// Instead we flip `isActive`. requestingUserId prevents an admin from
+// deactivating their own account by mistake.
+
+export const setUserActiveStatusService = async ({
+  organizationId,
+  userId,
+  isActive,
+  requestingUserId,
+}) => {
+  if (String(userId) === String(requestingUserId)) {
+    throw createServiceError(400, "You cannot change your own active status");
+  }
+
+  const user = await User.findOne({ _id: userId, organizationId });
+  if (!user) {
+    throw createServiceError(404, "User not found");
+  }
+
+  user.isActive = isActive;
+  await user.save();
+
+  return {
+    status: 200,
+    payload: {
+      message: isActive ? "User activated successfully" : "User deactivated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive,
+      },
+    },
   };
 };

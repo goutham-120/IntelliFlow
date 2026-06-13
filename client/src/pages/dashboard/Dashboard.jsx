@@ -1,12 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import BarChart from "../../components/charts/BarChart";
 import Loader from "../../components/common/Loader";
 import { useTheme } from "../../context/ThemeContext";
-import { fetchAnalyticsDashboard } from "../../services/analyticsService";
+import useAuth from "../../hooks/useAuth";
+import { fetchUserGroups } from "../../services/groupService";
 import { fetchInboxNotifications } from "../../services/notificationService";
+import { fetchTasks } from "../../services/taskService";
 import { formatDateTime } from "../../utils/formatDate";
+
+const ACTIVE_STATUSES = new Set(["pending", "in_progress", "blocked", "needs_changes"]);
+
+const toId = (value) => String(value || "");
+
+const toTitle = (value) =>
+  String(value || "")
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 
 function StatCard({ title, value, hint, tone = "emerald", isLightTheme }) {
   const toneClass = isLightTheme
@@ -40,41 +51,54 @@ function StatCard({ title, value, hint, tone = "emerald", isLightTheme }) {
   );
 }
 
-function QuickLink({ to, title, description, isLightTheme }) {
-  return (
-    <Link
-      to={to}
-      className={`rounded-3xl border p-4 transition ${
-        isLightTheme
-          ? "border-slate-700/70 bg-slate-900/78 hover:border-teal-300/25 hover:bg-slate-900"
-          : "border-slate-800 bg-slate-900/60 hover:border-emerald-400/40 hover:bg-slate-900"
-      }`}
-    >
-      <p className={`font-semibold ${isLightTheme ? "text-white" : "text-white"}`}>{title}</p>
-      <p className={`mt-2 text-sm ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>{description}</p>
-    </Link>
-  );
-}
-
 export default function Dashboard() {
+  const { user } = useAuth();
   const { isLightTheme } = useTheme();
-  const [analytics, setAnalytics] = useState(null);
+  const userId = user?.id || user?._id || "";
+  const [tasks, setTasks] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [memberships, setMemberships] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const loadDashboard = async () => {
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError("");
       try {
-        const [analyticsData, inboxData] = await Promise.all([
-          fetchAnalyticsDashboard(),
+        const [taskResult, inboxResult, groupsResult] = await Promise.allSettled([
+          fetchTasks({ onlyMine: true }),
           fetchInboxNotifications({ limit: 6 }),
+          fetchUserGroups(userId),
         ]);
 
-        setAnalytics(analyticsData);
-        setNotifications(Array.isArray(inboxData) ? inboxData : []);
+        if (taskResult.status === "fulfilled") {
+          setTasks(Array.isArray(taskResult.value) ? taskResult.value : []);
+        } else {
+          setTasks([]);
+        }
+
+        if (inboxResult.status === "fulfilled") {
+          setNotifications(Array.isArray(inboxResult.value) ? inboxResult.value : []);
+        } else {
+          setNotifications([]);
+        }
+
+        if (groupsResult.status === "fulfilled") {
+          setMemberships(Array.isArray(groupsResult.value) ? groupsResult.value : []);
+        } else {
+          setMemberships([]);
+        }
+
+        if (taskResult.status === "rejected" && inboxResult.status === "rejected") {
+          const fallbackError = taskResult.reason || inboxResult.reason;
+          setError(fallbackError?.response?.data?.message || "Unable to fetch live data right now");
+        }
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load dashboard");
       } finally {
@@ -83,55 +107,80 @@ export default function Dashboard() {
     };
 
     loadDashboard();
-  }, []);
+  }, [userId]);
 
-  const summaryCards = useMemo(() => {
-    if (!analytics) return [];
+  const myMetrics = useMemo(() => {
+    const myUserId = toId(userId);
+    const myTasks = tasks.filter((task) => toId(task.assignedTo?._id || task.assignedTo) === myUserId);
+    const myActiveTasks = myTasks.filter((task) => ACTIVE_STATUSES.has(task.status));
 
-    const breachedTasks = analytics.teamPerformance.reduce(
-      (sum, team) => sum + Number(team.blockedTasks || 0),
-      0
+    const myStageEntries = tasks.flatMap((task) =>
+      (task.completedStages || [])
+        .filter((entry) => toId(entry.completedBy?._id || entry.completedBy) === myUserId)
+        .map((entry) => ({
+          taskId: task._id,
+          taskTitle: task.title,
+          stageName: entry.stageName || "Unnamed Stage",
+          completedAt: entry.completedAt,
+        }))
     );
-    const avgCompletion =
-      analytics.employeePerformance.length > 0
-        ? (
-            analytics.employeePerformance.reduce(
-              (sum, employee) => sum + Number(employee.avgCompletionHours || 0),
-              0
-            ) / analytics.employeePerformance.length
-          ).toFixed(1)
-        : "0.0";
 
-    return [
+    const stageBreakdownMap = myStageEntries.reduce((acc, entry) => {
+      const key = entry.stageName;
+      acc.set(key, (acc.get(key) || 0) + 1);
+      return acc;
+    }, new Map());
+
+    const stageBreakdown = Array.from(stageBreakdownMap.entries())
+      .map(([stageName, count]) => ({ stageName, count }))
+      .sort((a, b) => b.count - a.count || a.stageName.localeCompare(b.stageName));
+
+    const contributedTaskIds = new Set(myStageEntries.map((entry) => toId(entry.taskId)));
+    const unreadNotifications = notifications.filter((item) => !item.isRead).length;
+
+    return {
+      myTasks,
+      myActiveTasks,
+      myStageEntries,
+      stageBreakdown,
+      unreadNotifications,
+      contributedTaskCount: contributedTaskIds.size,
+      recentMyTasks: [...myTasks].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)).slice(0, 6),
+    };
+  }, [notifications, tasks, userId]);
+
+  const summaryCards = useMemo(
+    () => [
       {
-        title: "Active Tasks",
-        value: analytics.summary.activeTasks,
-        hint: "Currently in pending, in-progress, or blocked states",
+        title: "My Active Tasks",
+        value: myMetrics.myActiveTasks.length,
+        hint: "Tasks currently requiring your action",
         tone: "emerald",
       },
       {
-        title: "Unread Alerts",
-        value: analytics.summary.unreadNotifications,
-        hint: "Inbox items that still need attention",
+        title: "Stage Completions",
+        value: myMetrics.myStageEntries.length,
+        hint: "Total stage handoffs completed by you",
         tone: "cyan",
       },
       {
-        title: "Blocked Work",
-        value: breachedTasks,
-        hint: "Tasks contributing to delivery friction",
+        title: "Team Memberships",
+        value: memberships.length,
+        hint: "Teams where you currently contribute",
         tone: "amber",
       },
       {
-        title: "Avg Completion",
-        value: `${avgCompletion}h`,
-        hint: "Average completed-task turnaround across employees",
+        title: "Unread Alerts",
+        value: myMetrics.unreadNotifications,
+        hint: "Inbox items waiting for your review",
         tone: "rose",
       },
-    ];
-  }, [analytics]);
+    ],
+    [memberships.length, myMetrics]
+  );
 
   if (loading) {
-    return <Loader label="Loading dashboard..." />;
+    return <Loader label="Loading your dashboard..." />;
   }
 
   if (error) {
@@ -157,53 +206,29 @@ export default function Dashboard() {
             : "border-slate-800 bg-[radial-gradient(circle_at_top_left,rgba(52,211,153,0.16),transparent_30%),linear-gradient(120deg,rgba(15,23,42,0.96),rgba(15,23,42,0.82),rgba(8,47,73,0.45))] shadow-[0_14px_50px_rgba(0,0,0,0.22)]"
         }`}
       >
-        <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-end">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className={`text-xs font-semibold uppercase tracking-[0.28em] ${isLightTheme ? "text-teal-200/90" : "text-emerald-300/80"}`}>
-              Operations Overview
+              Personal Workspace
             </p>
-            <h1
-              className={`mt-3 font-display text-4xl font-bold md:text-5xl ${
-                isLightTheme ? "text-white" : "text-white"
-              }`}
-            >
-              Professional visibility for every moving part.
+            <h1 className="mt-3 font-display text-4xl font-bold text-white md:text-5xl">
+              Welcome back, {user?.name || "Teammate"}.
             </h1>
             <p className={`mt-4 max-w-2xl text-sm leading-7 ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
-              Track workload, inbox pressure, and delivery momentum from a single surface built
-              for quick decisions and cleaner daily operations.
+              This view is focused on your role, team memberships, stage contributions, and
+              tasks you currently own.
             </p>
           </div>
-
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <div
-              className={`rounded-3xl border px-4 py-4 ${
-                isLightTheme
-                  ? "border-slate-700/80 bg-slate-950/54"
-                  : "border-slate-700/80 bg-slate-900/70"
-              }`}
-            >
-              <p className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${isLightTheme ? "text-slate-400" : "text-slate-500"}`}>
-                Live Status
-              </p>
-              <p className={`mt-2 text-sm font-semibold ${isLightTheme ? "text-white" : "text-white"}`}>
-                Monitoring team throughput and alerts
-              </p>
-            </div>
-            <div
-              className={`rounded-3xl border px-4 py-4 ${
-                isLightTheme
-                  ? "border-slate-700/80 bg-slate-950/54"
-                  : "border-slate-700/80 bg-slate-900/70"
-              }`}
-            >
-              <p className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${isLightTheme ? "text-slate-400" : "text-slate-500"}`}>
-                Focus
-              </p>
-              <p className={`mt-2 text-sm font-semibold ${isLightTheme ? "text-white" : "text-white"}`}>
-                Prioritize blockers before they become delays
-              </p>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-full border border-slate-700 bg-slate-950/65 px-3 py-1 text-xs uppercase tracking-wide text-slate-300">
+              Role: {toTitle(user?.role)}
+            </span>
+            <span className="rounded-full border border-slate-700 bg-slate-950/65 px-3 py-1 text-xs uppercase tracking-wide text-slate-300">
+              Org: {user?.orgCode || "--"}
+            </span>
+            <span className="rounded-full border border-slate-700 bg-slate-950/65 px-3 py-1 text-xs uppercase tracking-wide text-slate-300">
+              Contributed Tasks: {myMetrics.contributedTaskCount}
+            </span>
           </div>
         </div>
       </section>
@@ -215,11 +240,6 @@ export default function Dashboard() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <BarChart title="Task Status Snapshot" data={analytics?.taskStatusData || []} />
-        <BarChart title="Team Workload Snapshot" data={analytics?.teamLoadData || []} />
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div
           className={`rounded-[28px] border p-5 ${
             isLightTheme
@@ -227,134 +247,177 @@ export default function Dashboard() {
               : "border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
           }`}
         >
-          <div className="flex items-center justify-between gap-3">
-            <h2 className={`text-lg font-semibold ${isLightTheme ? "text-white" : "text-white"}`}>
-              Recent Inbox Activity
-            </h2>
-            <Link
-              to="/inbox"
-              className={`text-sm ${isLightTheme ? "text-teal-300" : "text-emerald-300"} hover:underline`}
-            >
-              Open Inbox
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-white">My Teams</h2>
+            <Link to="/teams" className={`text-sm ${isLightTheme ? "text-teal-300" : "text-emerald-300"} hover:underline`}>
+              Open Teams
             </Link>
           </div>
-
-          {!notifications.length ? (
-            <p className={`mt-4 text-sm ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
-              No recent notifications found.
+          {!memberships.length ? (
+            <p className={`text-sm ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
+              You are not assigned to any teams yet.
             </p>
           ) : (
-            <div className="mt-5 space-y-3">
-              {notifications.map((notification) => (
+            <div className="space-y-3">
+              {memberships.map((membership) => (
                 <article
-                  key={notification._id}
-                  className={`rounded-3xl border p-4 transition ${
+                  key={membership._id}
+                  className={`rounded-2xl border px-4 py-3 ${
                     isLightTheme
-                      ? "border-slate-700/80 bg-slate-900/72 hover:border-teal-300/25"
-                      : "border-slate-800 bg-slate-950/70 hover:border-emerald-400/30"
+                      ? "border-slate-700/80 bg-slate-900/72"
+                      : "border-slate-800 bg-slate-950/70"
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className={`text-sm ${isLightTheme ? "text-white" : "text-white"}`}>
-                        {notification.message}
-                      </p>
-                      <p className={`mt-2 text-xs uppercase tracking-wide ${isLightTheme ? "text-slate-400" : "text-slate-500"}`}>
-                        {notification.type}
+                      <p className="font-medium text-white">{membership.groupId?.name || "Unnamed Team"}</p>
+                      <p className={`text-xs ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
+                        {membership.groupId?.code || "--"}
                       </p>
                     </div>
-                    <span
-                      className={`rounded-full px-2 py-1 text-[11px] ${
-                        notification.isRead
-                          ? isLightTheme
-                            ? "bg-slate-800 text-slate-300"
-                            : "bg-slate-800 text-slate-400"
-                          : isLightTheme
-                          ? "bg-teal-400/16 text-teal-200"
-                          : "bg-emerald-500/20 text-emerald-200"
-                      }`}
-                    >
-                      {notification.isRead ? "Read" : "Unread"}
+                    <span className="rounded-full border border-slate-700 bg-slate-950/75 px-2.5 py-1 text-xs capitalize text-slate-300">
+                      {toTitle(membership.roleInGroup)}
                     </span>
                   </div>
-                  <p className={`mt-3 text-xs ${isLightTheme ? "text-slate-400" : "text-slate-500"}`}>
-                    {formatDateTime(notification.createdAt)}
-                  </p>
                 </article>
               ))}
             </div>
           )}
         </div>
 
-        <div className="space-y-4">
-          <div
-            className={`rounded-[28px] border p-5 ${
-              isLightTheme
-                ? "border-slate-700/80 bg-slate-950/72 shadow-[0_18px_45px_rgba(2,6,23,0.24)] backdrop-blur-xl"
-                : "border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
-            }`}
-          >
-            <h2 className={`text-lg font-semibold ${isLightTheme ? "text-white" : "text-white"}`}>
-              Quick Access
-            </h2>
-            <div className="mt-4 grid gap-3">
-              <QuickLink
-                to="/analytics"
-                title="Deep Analytics"
-                description="Open team and employee performance analytics."
-                isLightTheme={isLightTheme}
-              />
-              <QuickLink
-                to="/tasks"
-                title="Task Operations"
-                description="Review current tasks, ownership, and stages."
-                isLightTheme={isLightTheme}
-              />
-              <QuickLink
-                to="/workflows"
-                title="Workflow Monitor"
-                description="Check stage design and workflow distribution."
-                isLightTheme={isLightTheme}
-              />
-            </div>
-          </div>
-
-          <div
-            className={`rounded-[28px] border p-5 ${
-              isLightTheme
-                ? "border-slate-700/80 bg-slate-950/72 shadow-[0_18px_45px_rgba(2,6,23,0.24)] backdrop-blur-xl"
-                : "border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
-            }`}
-          >
-            <h2 className={`text-lg font-semibold ${isLightTheme ? "text-white" : "text-white"}`}>
-              Team Leaders
-            </h2>
+        <div
+          className={`rounded-[28px] border p-5 ${
+            isLightTheme
+              ? "border-slate-700/80 bg-slate-950/72 shadow-[0_18px_45px_rgba(2,6,23,0.24)] backdrop-blur-xl"
+              : "border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
+          }`}
+        >
+          <h2 className="text-lg font-semibold text-white">Stage Contribution Breakdown</h2>
+          {!myMetrics.stageBreakdown.length ? (
+            <p className={`mt-4 text-sm ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
+              No completed stage contributions from your account yet.
+            </p>
+          ) : (
             <div className="mt-4 space-y-3">
-              {(analytics?.teamPerformance || []).slice(0, 4).map((team) => (
+              {myMetrics.stageBreakdown.slice(0, 6).map((entry) => (
                 <div
-                  key={team.name}
-                  className={`flex items-center justify-between rounded-3xl border px-4 py-3 ${
+                  key={entry.stageName}
+                  className={`flex items-center justify-between rounded-2xl border px-4 py-3 ${
                     isLightTheme
                       ? "border-slate-700/80 bg-slate-900/72"
                       : "border-slate-800 bg-slate-950/70"
                   }`}
                 >
-                  <div>
-                    <p className={`font-medium ${isLightTheme ? "text-white" : "text-white"}`}>
-                      {team.name}
-                    </p>
-                    <p className={`text-xs ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
-                      {team.completedTasks}/{team.totalTasks} completed
-                    </p>
-                  </div>
-                  <p className={`text-sm font-semibold ${isLightTheme ? "text-teal-300" : "text-emerald-300"}`}>
-                    {team.completionRate.toFixed(1)}%
-                  </p>
+                  <p className="text-sm text-white">{entry.stageName}</p>
+                  <span className={`text-sm font-semibold ${isLightTheme ? "text-teal-300" : "text-emerald-300"}`}>
+                    {entry.count}
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
+      </section>
+
+      <section
+        className={`rounded-[28px] border p-5 ${
+          isLightTheme
+            ? "border-slate-700/80 bg-slate-950/72 shadow-[0_18px_45px_rgba(2,6,23,0.24)] backdrop-blur-xl"
+            : "border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
+        }`}
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-white">My Assigned Tasks</h2>
+          <Link to="/tasks" className={`text-sm ${isLightTheme ? "text-teal-300" : "text-emerald-300"} hover:underline`}>
+            Open Tasks
+          </Link>
+        </div>
+        {!myMetrics.recentMyTasks.length ? (
+          <p className={`text-sm ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
+            You do not have assigned tasks yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {myMetrics.recentMyTasks.map((task) => (
+              <article
+                key={task._id}
+                className={`rounded-2xl border p-4 ${
+                  isLightTheme
+                    ? "border-slate-700/80 bg-slate-900/72"
+                    : "border-slate-800 bg-slate-950/70"
+                }`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="font-medium text-white">{task.title}</p>
+                  <span className="rounded-full border border-slate-700 bg-slate-950/75 px-2.5 py-1 text-xs text-slate-300">
+                    {toTitle(task.status)}
+                  </span>
+                </div>
+                <p className={`mt-2 text-xs ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
+                  Stage: {task.stageName || "Unstaged"} | Updated: {formatDateTime(task.updatedAt)}
+                </p>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section
+        className={`rounded-[28px] border p-5 ${
+          isLightTheme
+            ? "border-slate-700/80 bg-slate-950/72 shadow-[0_18px_45px_rgba(2,6,23,0.24)] backdrop-blur-xl"
+            : "border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.85))] shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
+        }`}
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-white">Recent Inbox Activity</h2>
+          <Link to="/inbox" className={`text-sm ${isLightTheme ? "text-teal-300" : "text-emerald-300"} hover:underline`}>
+            Open Inbox
+          </Link>
+        </div>
+        {!notifications.length ? (
+          <p className={`text-sm ${isLightTheme ? "text-slate-300" : "text-slate-400"}`}>
+            No recent notifications found.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {notifications.map((notification) => (
+              <article
+                key={notification._id}
+                className={`rounded-2xl border p-4 ${
+                  isLightTheme
+                    ? "border-slate-700/80 bg-slate-900/72"
+                    : "border-slate-800 bg-slate-950/70"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm text-white">{notification.message}</p>
+                    <p className={`mt-2 text-xs uppercase tracking-wide ${isLightTheme ? "text-slate-400" : "text-slate-500"}`}>
+                      {notification.type}
+                    </p>
+                  </div>
+                  <span
+                    className={`rounded-full px-2 py-1 text-[11px] ${
+                      notification.isRead
+                        ? isLightTheme
+                          ? "bg-slate-800 text-slate-300"
+                          : "bg-slate-800 text-slate-400"
+                        : isLightTheme
+                        ? "bg-teal-400/16 text-teal-200"
+                        : "bg-emerald-500/20 text-emerald-200"
+                    }`}
+                  >
+                    {notification.isRead ? "Read" : "Unread"}
+                  </span>
+                </div>
+                <p className={`mt-3 text-xs ${isLightTheme ? "text-slate-400" : "text-slate-500"}`}>
+                  {formatDateTime(notification.createdAt)}
+                </p>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

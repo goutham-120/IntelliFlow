@@ -41,3 +41,8 @@ export const assignTaskToGroup = async (groupId, taskId) => {
   const response = await api.post(`/groups/${groupId}/assign-task`, { taskId });
   return response.data;
 };
+
+export const fetchUserGroups = async (userId) => {
+  const response = await api.get(`/groups/users/${userId}`);
+  return response.data;
+};

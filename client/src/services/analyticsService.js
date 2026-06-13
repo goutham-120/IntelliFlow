@@ -9,21 +9,26 @@ export const fetchAnalyticsDashboard = async (lookbackDays = 14) => {
 
   return {
     summary: {
-      totalTasks: payload.summary?.totalTasks || 0,
-      activeTasks: payload.summary?.activeTasks || 0,
-      activeWorkflows: payload.summary?.totalWorkflows || 0,
-      groups: payload.summary?.totalGroups || 0,
-      users: payload.summary?.totalUsers || 0,
-      unreadNotifications: payload.summary?.unreadNotifications || 0,
-      recentTasks: payload.summary?.recentTasks || 0,
+      totalTasks:          payload.summary?.totalTasks          || 0,
+      activeTasks:         payload.summary?.activeTasks         || 0,
+      activeWorkflows:     payload.summary?.totalWorkflows       || 0,
+      groups:              payload.summary?.totalGroups          || 0,
+      users:               payload.summary?.totalUsers           || 0,
+      unreadNotifications: payload.summary?.unreadNotifications  || 0,
+      recentTasks:         payload.summary?.recentTasks          || 0,
     },
-    taskStatusData: payload.taskStatusData || [],
-    stageLoadData: payload.stageLoadData || [],
-    workflowMixData: payload.workflowMixData || [],
-    teamLoadData: payload.teamLoadData || [],
-    employeeLoadData: payload.employeeLoadData || [],
-    teamPerformance: payload.teamPerformance || [],
-    employeePerformance: payload.employeePerformance || [],
-    latestTasks: payload.recentTasks || [],
+    taskStatusData:      payload.taskStatusData      || [],
+    stageLoadData:       payload.stageLoadData       || [],
+    workflowMixData:     payload.workflowMixData     || [],
+    teamLoadData:        payload.teamLoadData         || [],
+    employeeLoadData:    payload.employeeLoadData     || [],
+    teamPerformance:     payload.teamPerformance      || [],
+    employeePerformance: payload.employeePerformance  || [],
+    workflowStatusCards: payload.workflowStatusCards  || [],
+    latestTasks:         payload.recentTasks          || [],
+    // ── NEW ──
+    tasksCreatedSeries:  payload.tasksCreatedSeries   || [], // [{ date, count }]
+    tasksCompletedSeries:payload.tasksCompletedSeries || [], // [{ date, count, avgCycleHours }]
+    bottleneckStages:    payload.bottleneckStages      || [], // [{ stageName, workflowName, avgWaitHours, taskCount }]
   };
 };

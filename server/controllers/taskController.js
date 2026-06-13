@@ -5,6 +5,7 @@ import {
   deleteTaskService,
   getTaskByIdService,
   getTasksService,
+  rejectTaskStageService,
   updateTaskService,
 } from "../services/taskService.js";
 
@@ -50,5 +51,17 @@ export const completeTaskStage = createController(
   (req) => ({
     ...withTaskRequester(req),
     taskId: req.params.taskId,
+    preferredUserId: req.body?.preferredUserId,
+    description: req.body?.description,
+  })
+);
+
+export const rejectTaskStage = createController(
+  "Reject Task Stage",
+  rejectTaskStageService,
+  (req) => ({
+    ...withTaskRequester(req),
+    taskId: req.params.taskId,
+    description: req.body?.description,
   })
 );

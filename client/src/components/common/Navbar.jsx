@@ -60,7 +60,6 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }) {
     "/workflows/create": "Create Workflow",
     "/tasks": "Tasks",
     "/tasks/create": "Create Task",
-    "/sla": "SLA Monitor",
     "/analytics": "Analytics",
     "/users": "User Management",
     "/groups": "Groups",
@@ -96,7 +95,7 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }) {
                 ? "border-slate-700 bg-slate-900/90 text-slate-200"
                 : "border-slate-700 bg-slate-800/80 text-slate-200"
             }`}
-            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
           >
             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5">
               <path

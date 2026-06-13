@@ -10,7 +10,7 @@ const router = express.Router();
 router.get(
   "/summary",
   protect,
-  authorizeRoles("admin", "user"),
+  authorizeRoles("admin"),
   validateAnalyticsQuery,
   getAnalyticsSummary
 );

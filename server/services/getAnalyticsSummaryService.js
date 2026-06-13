@@ -5,6 +5,8 @@ import Group from "../models/Group.js";
 import User from "../models/User.js";
 import { ACTIVE_TASK_STATUSES, TASK_STATUS_LIST } from "../constants/taskStatus.js";
 
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
 const daysAgo = (days) => {
   const value = new Date();
   value.setDate(value.getDate() - days);
@@ -23,7 +25,6 @@ const createPerformanceEntry = (name) => ({
 const getOrCreatePerformanceEntry = (collection, key, name) => {
   const existing = collection.get(key);
   if (existing) return existing;
-
   const created = createPerformanceEntry(name);
   collection.set(key, created);
   return created;
@@ -43,10 +44,14 @@ const finalizePerformanceEntries = (entries) => {
     activeTasks: entry.activeTasks,
     blockedTasks: entry.blockedTasks,
     completionRate:
-      entry.totalTasks > 0 ? Number(((entry.completedTasks / entry.totalTasks) * 100).toFixed(1)) : 0,
+      entry.totalTasks > 0
+        ? Number(((entry.completedTasks / entry.totalTasks) * 100).toFixed(1))
+        : 0,
     avgCompletionHours:
       entry.completedTasks > 0
-        ? Number((entry.totalCompletionMs / entry.completedTasks / (1000 * 60 * 60)).toFixed(1))
+        ? Number(
+            (entry.totalCompletionMs / entry.completedTasks / (1000 * 60 * 60)).toFixed(1)
+          )
         : 0,
   }));
 
@@ -59,6 +64,8 @@ const finalizePerformanceEntries = (entries) => {
 
   return mapped;
 };
+
+// ─── Performance Metrics (unchanged) ─────────────────────────────────────────
 
 const buildStageContributionMetrics = ({ tasks, groups, users }) => {
   const groupsById = new Map(
@@ -74,12 +81,17 @@ const buildStageContributionMetrics = ({ tasks, groups, users }) => {
       .map((group) => [String(group._id), createPerformanceEntry(group.name)])
   );
   const employeePerformanceMap = new Map(
-    (users || []).map((user) => [String(user._id), createPerformanceEntry(user.name || "Unknown User")])
+    (users || []).map((user) => [
+      String(user._id),
+      createPerformanceEntry(user.name || "Unknown User"),
+    ])
   );
 
   tasks.forEach((task) => {
     let hasEmployeeStageCompletion = false;
-    const workflowStages = [...(task.workflowId?.stages || [])].sort((a, b) => a.order - b.order);
+    const workflowStages = [...(task.workflowId?.stages || [])].sort(
+      (a, b) => a.order - b.order
+    );
     const stageDetailsByName = new Map(
       workflowStages.map((stage) => [
         String(stage.name || "").trim().toLowerCase(),
@@ -155,7 +167,9 @@ const buildStageContributionMetrics = ({ tasks, groups, users }) => {
     }
 
     if (task.status !== "done" && ACTIVE_TASK_STATUSES.includes(task.status)) {
-      const currentGroupId = task.assignedGroupId?._id ? String(task.assignedGroupId._id) : "";
+      const currentGroupId = task.assignedGroupId?._id
+        ? String(task.assignedGroupId._id)
+        : "";
       if (currentGroupId) {
         const groupMeta = groupsById.get(currentGroupId);
         const teamEntry = getOrCreatePerformanceEntry(
@@ -165,9 +179,7 @@ const buildStageContributionMetrics = ({ tasks, groups, users }) => {
         );
         teamEntry.totalTasks += 1;
         teamEntry.activeTasks += 1;
-        if (task.status === "blocked") {
-          teamEntry.blockedTasks += 1;
-        }
+        if (task.status === "blocked") teamEntry.blockedTasks += 1;
       }
 
       if (currentUserId) {
@@ -179,20 +191,271 @@ const buildStageContributionMetrics = ({ tasks, groups, users }) => {
         );
         employeeEntry.totalTasks += 1;
         employeeEntry.activeTasks += 1;
-        if (task.status === "blocked") {
-          employeeEntry.blockedTasks += 1;
-        }
+        if (task.status === "blocked") employeeEntry.blockedTasks += 1;
       }
     }
   });
 
   return {
     teamPerformance: finalizePerformanceEntries(Array.from(teamPerformanceMap.values())),
-    employeePerformance: finalizePerformanceEntries(Array.from(employeePerformanceMap.values())),
+    employeePerformance: finalizePerformanceEntries(
+      Array.from(employeePerformanceMap.values())
+    ),
   };
 };
 
-export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays = 14 }) => {
+// ─── NEW: Time-series helpers ─────────────────────────────────────────────────
+
+/**
+ * Fills in every date between start and end (inclusive) so the chart
+ * never has gaps for days with zero activity.
+ */
+const buildDateRange = (startDate, endDate) => {
+  const dates = [];
+  const cursor = new Date(startDate);
+  cursor.setHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setHours(0, 0, 0, 0);
+  while (cursor <= end) {
+    dates.push(cursor.toISOString().slice(0, 10)); // "YYYY-MM-DD"
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dates;
+};
+
+/**
+ * Tasks created per day over the lookback window.
+ * Returns [{ date: "YYYY-MM-DD", count: N }, ...]
+ */
+const getTasksCreatedTimeSeries = async ({ organizationId, createdAfter }) => {
+  const rows = await Task.aggregate([
+    { $match: { organizationId, createdAt: { $gte: createdAfter } } },
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+        },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  const byDate = new Map(rows.map((r) => [r._id, r.count]));
+  const dates = buildDateRange(createdAfter, new Date());
+
+  return dates.map((date) => ({ date, count: byDate.get(date) || 0 }));
+};
+
+/**
+ * Tasks completed per day + average cycle time (hours) per day.
+ * "Completed" = a completedStages entry whose completedAt falls in the window.
+ * Cycle time = completedAt of that stage entry minus task.createdAt.
+ * Returns [{ date: "YYYY-MM-DD", count: N, avgCycleHours: N }, ...]
+ */
+const getTasksCompletedTimeSeries = async ({ organizationId, createdAfter }) => {
+  const rows = await Task.aggregate([
+    // Only tasks that have at least one completed stage in the window
+    {
+      $match: {
+        organizationId,
+        "completedStages.0": { $exists: true },
+      },
+    },
+    // Unwind so each stage entry becomes its own document
+    { $unwind: "$completedStages" },
+    // Keep only stage completions within the lookback window
+    {
+      $match: {
+        "completedStages.completedAt": { $gte: createdAfter },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: "%Y-%m-%d", date: "$completedStages.completedAt" },
+        },
+        count: { $sum: 1 },
+        // Average ms from task creation to this stage completion
+        totalCycleMs: {
+          $sum: {
+            $subtract: ["$completedStages.completedAt", "$createdAt"],
+          },
+        },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  const byDate = new Map(
+    rows.map((r) => [
+      r._id,
+      {
+        count: r.count,
+        avgCycleHours: Number((r.totalCycleMs / r.count / (1000 * 60 * 60)).toFixed(2)),
+      },
+    ])
+  );
+
+  const dates = buildDateRange(createdAfter, new Date());
+
+  return dates.map((date) => {
+    const entry = byDate.get(date);
+    return {
+      date,
+      count: entry?.count || 0,
+      avgCycleHours: entry?.avgCycleHours || 0,
+    };
+  });
+};
+
+// ─── NEW: Bottleneck stages ───────────────────────────────────────────────────
+
+/**
+ * For every completed stage across all tasks, computes the wait time
+ * (time spent in that stage = completedAt minus the previous stage's
+ * completedAt, or task.createdAt for the first stage).
+ *
+ * Groups by stageName + workflowName, averages the wait, and returns
+ * the top N slowest stages.
+ *
+ * Returns:
+ * [
+ *   {
+ *     stageName: string,
+ *     workflowName: string,
+ *     avgWaitHours: number,
+ *     taskCount: number,       // how many stage completions were measured
+ *   },
+ *   ...
+ * ]
+ */
+const getBottleneckStages = async ({ organizationId, limit = 8 }) => {
+  const rows = await Task.aggregate([
+    // Only workflow tasks that have completed at least one stage
+    {
+      $match: {
+        organizationId,
+        workflowId: { $ne: null },
+        "completedStages.0": { $exists: true },
+      },
+    },
+    // Bring in workflow name + stage order list
+    {
+      $lookup: {
+        from: "workflows",
+        localField: "workflowId",
+        foreignField: "_id",
+        as: "workflow",
+      },
+    },
+    { $unwind: { path: "$workflow", preserveNullAndEmpty: false } },
+    // Sort completedStages by completedAt ascending so we can calculate deltas
+    {
+      $addFields: {
+        completedStagesSorted: {
+          $sortArray: { input: "$completedStages", sortBy: { completedAt: 1 } },
+        },
+      },
+    },
+    // Unwind with index so we know which entry is "first"
+    {
+      $unwind: {
+        path: "$completedStagesSorted",
+        includeArrayIndex: "stageIndex",
+      },
+    },
+    // For each stage entry, attach the previous stage's completedAt
+    // (or task.createdAt when stageIndex === 0)
+    {
+      $addFields: {
+        prevCompletedAt: {
+          $cond: [
+            { $eq: ["$stageIndex", 0] },
+            "$createdAt",
+            {
+              // Access the previous element in the sorted array
+              $let: {
+                vars: {
+                  prevIdx: { $subtract: ["$stageIndex", 1] },
+                },
+                in: {
+                  $getField: {
+                    field: "completedAt",
+                    input: {
+                      $arrayElemAt: ["$completedStagesSorted", "$$prevIdx"],
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+    // Compute wait time in milliseconds (clamp to 0 to avoid negatives from
+    // out-of-order timestamps)
+    {
+      $addFields: {
+        waitMs: {
+          $max: [
+            0,
+            {
+              $subtract: [
+                "$completedStagesSorted.completedAt",
+                "$prevCompletedAt",
+              ],
+            },
+          ],
+        },
+      },
+    },
+    // Group by stage name + workflow name
+    {
+      $group: {
+        _id: {
+          stageName: "$completedStagesSorted.stageName",
+          workflowId: "$workflow._id",
+          workflowName: "$workflow.name",
+        },
+        totalWaitMs: { $sum: "$waitMs" },
+        taskCount: { $sum: 1 },
+      },
+    },
+    // Compute average wait in hours
+    {
+      $addFields: {
+        avgWaitHours: {
+          $round: [
+            { $divide: ["$totalWaitMs", { $multiply: ["$taskCount", 3600000] }] },
+            2,
+          ],
+        },
+      },
+    },
+    // Sort by slowest average first
+    { $sort: { avgWaitHours: -1 } },
+    { $limit: limit },
+    {
+      $project: {
+        _id: 0,
+        stageName: "$_id.stageName",
+        workflowName: "$_id.workflowName",
+        avgWaitHours: 1,
+        taskCount: 1,
+      },
+    },
+  ]);
+
+  return rows;
+};
+
+// ─── Main service ─────────────────────────────────────────────────────────────
+
+export const getAnalyticsSummaryService = async ({
+  organizationId,
+  lookbackDays = 14,
+}) => {
   const createdAfter = daysAgo(Number(lookbackDays) || 14);
 
   const [
@@ -209,8 +472,15 @@ export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays 
     activeUsers,
     workflowStatusCounts,
     workflowsForStatusCards,
+    // ── NEW ──
+    tasksCreatedSeries,
+    tasksCompletedSeries,
+    bottleneckStages,
   ] = await Promise.all([
-    Task.aggregate([{ $match: { organizationId } }, { $group: { _id: "$status", count: { $sum: 1 } } }]),
+    Task.aggregate([
+      { $match: { organizationId } },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]),
     Task.aggregate([
       { $match: { organizationId } },
       {
@@ -267,22 +537,24 @@ export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays 
       { $match: { organizationId, workflowId: { $ne: null } } },
       {
         $group: {
-          _id: {
-            workflowId: "$workflowId",
-            status: "$status",
-          },
+          _id: { workflowId: "$workflowId", status: "$status" },
           count: { $sum: 1 },
         },
       },
     ]),
     Workflow.find({ organizationId }).select("name isActive"),
+    // ── NEW ──
+    getTasksCreatedTimeSeries({ organizationId, createdAfter }),
+    getTasksCompletedTimeSeries({ organizationId, createdAfter }),
+    getBottleneckStages({ organizationId, limit: 8 }),
   ]);
+
+  // ── existing derivations (unchanged) ──────────────────────────────────────
 
   const tasksByStatus = taskCounts.reduce(
     (acc, entry) => ({ ...acc, [entry._id]: entry.count }),
     {}
   );
-
   const totalTasks = taskCounts.reduce((sum, entry) => sum + entry.count, 0);
   const activeTasks = ACTIVE_TASK_STATUSES.reduce(
     (sum, status) => sum + (tasksByStatus[status] || 0),
@@ -310,7 +582,6 @@ export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays 
         status,
         count: statusCounts[status] || 0,
       }));
-
       return {
         workflowId: workflow._id,
         name: workflow.name,
@@ -361,10 +632,12 @@ export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays 
       employeePerformance,
       workflowStatusCards,
       recentTasks,
+      // ── NEW fields ──
+      tasksCreatedSeries,    // [{ date, count }]
+      tasksCompletedSeries,  // [{ date, count, avgCycleHours }]
+      bottleneckStages,      // [{ stageName, workflowName, avgWaitHours, taskCount }]
     },
   };
 };
 
-export default {
-  getAnalyticsSummaryService,
-};
+export default { getAnalyticsSummaryService };

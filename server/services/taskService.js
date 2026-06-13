@@ -15,6 +15,7 @@ import {
   canRequesterManualAssign,
   ensureActiveGroupMember,
   notifyTaskReachedGroupStage,
+  resolveStageAssignee,
   resolveWorkflowStage,
   resolveTaskWorkflowStage,
 } from "./taskService.helpers.js";
@@ -24,6 +25,7 @@ export const createTaskService = async ({
   requesterId,
   requesterRole,
   title,
+  description = "",
   status = "pending",
   workflowId = null,
   stageName,
@@ -33,16 +35,18 @@ export const createTaskService = async ({
   const taskData = {
     organizationId,
     title,
+    description,
     status,
     workflowId: null,
     stageName: "",
     assignedGroupId: null,
     assignedTo: null,
   };
+  let matchedStage = null;
 
   if (workflowId) {
     const workflow = await ensureWorkflowInOrg({ organizationId, workflowId });
-    const matchedStage = resolveWorkflowStage({ workflow, stageName });
+    matchedStage = resolveWorkflowStage({ workflow, stageName });
 
     taskData.workflowId = workflow._id;
     taskData.stageName = matchedStage.name;
@@ -56,14 +60,19 @@ export const createTaskService = async ({
   if (assignedTo) {
     await ensureUserInOrg({ organizationId, userId: assignedTo });
     if (taskData.assignedGroupId) {
-      const canAssign = await canRequesterManualAssign({
-        organizationId,
-        requesterId,
-        requesterRole,
-        groupId: taskData.assignedGroupId,
-      });
-      if (!canAssign) {
-        throw createServiceError(403, "Only admin or current team lead can manually assign");
+      const isWorkflowManualStage =
+        Boolean(matchedStage) && (matchedStage.assignmentType || "auto") === "manual";
+
+      if (!isWorkflowManualStage) {
+        const canAssign = await canRequesterManualAssign({
+          organizationId,
+          requesterId,
+          requesterRole,
+          groupId: taskData.assignedGroupId,
+        });
+        if (!canAssign) {
+          throw createServiceError(403, "Only admin or current team lead can manually assign");
+        }
       }
       await ensureActiveGroupMember({
         organizationId,
@@ -75,11 +84,18 @@ export const createTaskService = async ({
     }
     taskData.assignedTo = assignedTo;
   } else if (taskData.assignedGroupId) {
-    const selectedMember = await selectLeastLoadedGroupMember({
-      organizationId,
-      groupId: taskData.assignedGroupId,
-    });
-    taskData.assignedTo = selectedMember.userId._id;
+    if (matchedStage) {
+      taskData.assignedTo = await resolveStageAssignee({
+        organizationId,
+        stage: matchedStage,
+      });
+    } else {
+      const selectedMember = await selectLeastLoadedGroupMember({
+        organizationId,
+        groupId: taskData.assignedGroupId,
+      });
+      taskData.assignedTo = selectedMember.userId._id;
+    }
   }
 
   const task = await Task.create(taskData);
@@ -153,6 +169,7 @@ export const updateTaskService = async ({
   requesterRole,
   taskId,
   title,
+  description,
   status,
   workflowId,
   stageName,
@@ -164,8 +181,10 @@ export const updateTaskService = async ({
   const previousStageName = task.stageName;
   let workflow = null;
   let stageMovedByStatus = false;
+  let resolvedStage = null;
 
   if (title !== undefined) task.title = title;
+  if (description !== undefined) task.description = description;
   if (status !== undefined) task.status = status;
 
   const nextWorkflowId = workflowId !== undefined ? workflowId : task.workflowId;
@@ -180,6 +199,7 @@ export const updateTaskService = async ({
       stageName: nextStageName || undefined,
       stageOrder: nextStageOrder,
     });
+    resolvedStage = matchedStage;
 
     task.workflowId = workflow._id;
     task.stageName = matchedStage.name;
@@ -212,6 +232,7 @@ export const updateTaskService = async ({
     const { stages, currentStageIndex } = resolveTaskWorkflowStage({ workflow, task });
     const targetStageIndex = Math.max(0, currentStageIndex - 1);
     const targetStage = stages[targetStageIndex];
+    resolvedStage = targetStage;
 
     task.stageName = targetStage.name;
     task.stageOrder = targetStage.order;
@@ -252,12 +273,23 @@ export const updateTaskService = async ({
   } else {
     const currentAssignedGroupId = task.assignedGroupId ? String(task.assignedGroupId) : null;
     const groupChanged = currentAssignedGroupId !== previousAssignedGroupId;
-    if (task.assignedGroupId && (groupChanged || !task.assignedTo || stageMovedByStatus)) {
-      const selectedMember = await selectLeastLoadedGroupMember({
-        organizationId,
-        groupId: task.assignedGroupId,
-      });
-      task.assignedTo = selectedMember.userId._id;
+    const stageChangedBeforeSave = task.stageName !== previousStageName;
+    if (
+      task.assignedGroupId &&
+      (groupChanged || stageChangedBeforeSave || !task.assignedTo || stageMovedByStatus)
+    ) {
+      if (resolvedStage) {
+        task.assignedTo = await resolveStageAssignee({
+          organizationId,
+          stage: resolvedStage,
+        });
+      } else {
+        const selectedMember = await selectLeastLoadedGroupMember({
+          organizationId,
+          groupId: task.assignedGroupId,
+        });
+        task.assignedTo = selectedMember.userId._id;
+      }
     }
     if (!task.assignedGroupId && groupChanged) {
       task.assignedTo = null;
@@ -306,6 +338,8 @@ export const completeTaskStageService = async ({
   requesterId,
   requesterRole,
   taskId,
+  preferredUserId,
+  description = "",
 }) => {
   const task = await ensureTaskInOrg({ organizationId, taskId });
 
@@ -334,6 +368,7 @@ export const completeTaskStageService = async ({
 
   const completionEntry = {
     stageName: currentStage.name,
+    description,
     completedBy: requesterId,
     completedAt: new Date(),
   };
@@ -376,11 +411,11 @@ export const completeTaskStageService = async ({
   task.stageName = nextStage.name;
   task.stageOrder = nextStage.order;
   task.assignedGroupId = nextStage.groupId;
-  const selectedMember = await selectLeastLoadedGroupMember({
+  task.assignedTo = await resolveStageAssignee({
     organizationId,
-    groupId: nextStage.groupId,
+    stage: nextStage,
+    preferredUserId,
   });
-  task.assignedTo = selectedMember.userId._id;
   task.status = "in_progress";
   await task.save();
 
@@ -395,6 +430,86 @@ export const completeTaskStageService = async ({
     status: 200,
     payload: {
       message: "Stage completed and task moved to next stage",
+      task,
+    },
+  };
+};
+
+export const rejectTaskStageService = async ({
+  organizationId,
+  requesterId,
+  requesterRole,
+  taskId,
+  description = "",
+}) => {
+  const task = await ensureTaskInOrg({ organizationId, taskId });
+
+  if (!task.workflowId) {
+    throw createServiceError(400, "Stage rejection is available only for workflow tasks");
+  }
+  if (task.status === "done") {
+    throw createServiceError(400, "Completed tasks cannot be moved back by stage rejection");
+  }
+
+  const workflow = await ensureWorkflowInOrg({ organizationId, workflowId: task.workflowId });
+  const { stages, currentStageIndex } = resolveTaskWorkflowStage({ workflow, task });
+  const previousStage = stages[currentStageIndex - 1];
+
+  if (!previousStage) {
+    throw createServiceError(400, "This task is already at the first workflow stage");
+  }
+
+  const canReject = await canRequesterCompleteStage({
+    organizationId,
+    requesterId,
+    requesterRole,
+    assignedTo: task.assignedTo,
+  });
+  if (!canReject) {
+    throw createServiceError(
+      403,
+      "Only the user assigned to the current stage can reject it"
+    );
+  }
+
+  task.stageName = previousStage.name;
+  task.stageOrder = previousStage.order;
+  task.assignedGroupId = previousStage.groupId;
+  task.assignedTo = await resolveStageAssignee({
+    organizationId,
+    stage: previousStage,
+  });
+  task.status = "rejected";
+  task.completedStages = (task.completedStages || []).filter((entry) => {
+    const matchedStage = stages.find(
+      (stage) => stage.name.toLowerCase() === String(entry.stageName || "").toLowerCase()
+    );
+    return matchedStage ? matchedStage.order < previousStage.order : false;
+  });
+
+  await task.save();
+
+  await notifyTaskReachedGroupStage({
+    task,
+    stageName: previousStage.name,
+    groupId: previousStage.groupId,
+    assigneeId: task.assignedTo,
+  });
+
+  if (description) {
+    await emitTaskNotification({
+      organizationId: task.organizationId,
+      taskId: task._id,
+      type: "task_rejected",
+      recipientUserIds: [task.assignedTo].filter(Boolean),
+      message: `Task "${task.title}" was rejected back to stage "${previousStage.name}": ${description}`,
+    });
+  }
+
+  return {
+    status: 200,
+    payload: {
+      message: "Stage rejected and task moved back to previous stage",
       task,
     },
   };

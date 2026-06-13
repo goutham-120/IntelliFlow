@@ -1,8 +1,16 @@
 export default function TaskTimeline({ workflow, task }) {
+  const timestampFormatter = new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
   const stages = [...(workflow?.stages || [])].sort((a, b) => a.order - b.order);
   const currentStageName = String(task?.stageName || "").toLowerCase();
-  const completedStages = new Set(
-    (task?.completedStages || []).map((entry) => String(entry.stageName || "").toLowerCase())
+  const completedStageMap = new Map(
+    (task?.completedStages || []).map((entry) => [
+      String(entry.stageName || "").toLowerCase(),
+      entry,
+    ])
   );
 
   if (!stages.length) {
@@ -25,7 +33,8 @@ export default function TaskTimeline({ workflow, task }) {
         {stages.map((stage) => {
           const stageKey = stage.name.toLowerCase();
           const isCurrent = stageKey === currentStageName;
-          const isCompleted = completedStages.has(stageKey);
+          const completedEntry = completedStageMap.get(stageKey);
+          const isCompleted = Boolean(completedEntry);
           return (
             <div
               key={`${stage.order}-${stage.name}`}
@@ -37,8 +46,22 @@ export default function TaskTimeline({ workflow, task }) {
                   : "border-slate-700 bg-slate-950 text-slate-300"
               }`}
             >
-              <span className="font-medium">{stage.order}. </span>
-              <span>{stage.name}</span>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className="font-medium">{stage.order}. </span>
+                  <span>{stage.name}</span>
+                </div>
+                {completedEntry?.completedAt && (
+                  <span className="shrink-0 text-right text-[11px] leading-5 text-slate-300/80">
+                    {timestampFormatter.format(new Date(completedEntry.completedAt))}
+                  </span>
+                )}
+              </div>
+              {completedEntry?.description && (
+                <p className="mt-2 text-xs leading-5 text-slate-200/85">
+                  {completedEntry.description}
+                </p>
+              )}
             </div>
           );
         })}

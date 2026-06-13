@@ -11,6 +11,7 @@ import {
   completeTaskStage,
   deleteTask,
   fetchTaskById,
+  rejectTaskStage,
   updateTask,
 } from "../../services/taskService";
 import { fetchUsers } from "../../services/userService";
@@ -33,13 +34,18 @@ export default function TaskDetails() {
   const [deleting, setDeleting] = useState(false);
   const [assigningByGroup, setAssigningByGroup] = useState(false);
   const [completingStage, setCompletingStage] = useState(false);
+  const [rejectingStage, setRejectingStage] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const [canManualAssign, setCanManualAssign] = useState(false);
+  const [preferredNextUserId, setPreferredNextUserId] = useState("");
+  const [nextStageMembers, setNextStageMembers] = useState([]);
+  const [stageDescription, setStageDescription] = useState("");
 
   const [form, setForm] = useState({
     title: "",
+    description: "",
     status: "pending",
     workflowId: "",
     stageName: "",
@@ -69,9 +75,34 @@ export default function TaskDetails() {
     return [...stages].sort((a, b) => a.order - b.order);
   }, [selectedWorkflow]);
 
+  const taskWorkflowStages = useMemo(() => {
+    const stages = task?.workflowId?.stages || [];
+    return [...stages].sort((a, b) => a.order - b.order);
+  }, [task]);
+
+  const nextWorkflowStage = useMemo(() => {
+    if (!taskWorkflowStages.length || !task?.stageName) return null;
+    const currentIndex = taskWorkflowStages.findIndex(
+      (stage) => stage.name?.toLowerCase() === String(task.stageName).toLowerCase()
+    );
+    if (currentIndex < 0) return null;
+    return taskWorkflowStages[currentIndex + 1] || null;
+  }, [task?.stageName, taskWorkflowStages]);
+
+  const previousWorkflowStage = useMemo(() => {
+    if (!taskWorkflowStages.length || !task?.stageName) return null;
+    const currentIndex = taskWorkflowStages.findIndex(
+      (stage) => stage.name?.toLowerCase() === String(task.stageName).toLowerCase()
+    );
+    if (currentIndex <= 0) return null;
+    return taskWorkflowStages[currentIndex - 1] || null;
+  }, [task?.stageName, taskWorkflowStages]);
+
   const canCompleteStage = useMemo(() => {
     if (!task || task.status === "done") return false;
-    return String(task?.assignedTo?._id || "") === currentUserId;
+    const assignedUserId =
+      typeof task?.assignedTo === "string" ? task.assignedTo : task?.assignedTo?._id;
+    return String(assignedUserId || "") === currentUserId;
   }, [currentUserId, task]);
 
   const canUseTeamLoadBalancing = Boolean(task?.assignedGroupId?._id) && (isAdmin || groupRole === "team_lead");
@@ -118,6 +149,7 @@ export default function TaskDetails() {
 
       setForm({
         title: taskData?.title || "",
+        description: taskData?.description || "",
         status: taskData?.status || "pending",
         workflowId: taskData?.workflowId?._id || "",
         stageName: taskData?.stageName || "",
@@ -134,6 +166,52 @@ export default function TaskDetails() {
   useEffect(() => {
     loadTaskData();
   }, [loadTaskData]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadNextStageMembers = async () => {
+      if (
+        !nextWorkflowStage?.groupId ||
+        (nextWorkflowStage.assignmentType || "auto") !== "manual"
+      ) {
+        setNextStageMembers([]);
+        setPreferredNextUserId("");
+        return;
+      }
+
+      const nextGroupId =
+        typeof nextWorkflowStage.groupId === "string"
+          ? nextWorkflowStage.groupId
+          : nextWorkflowStage.groupId?._id;
+
+      if (!nextGroupId) {
+        setNextStageMembers([]);
+        setPreferredNextUserId("");
+        return;
+      }
+
+      try {
+        const membersData = await fetchGroupMembers(nextGroupId);
+        if (cancelled) return;
+        const memberships = Array.isArray(membersData?.memberships) ? membersData.memberships : [];
+        const activeMembers = memberships
+          .map((membership) => membership.userId)
+          .filter((member) => member?.isActive);
+        setNextStageMembers(activeMembers);
+      } catch {
+        if (!cancelled) {
+          setNextStageMembers([]);
+        }
+      }
+    };
+
+    loadNextStageMembers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [nextWorkflowStage]);
 
   const setField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -179,6 +257,7 @@ export default function TaskDetails() {
 
     const payload = {
       title: trimmedTitle,
+      description: form.description.trim(),
       status: form.status,
     };
 
@@ -257,13 +336,37 @@ export default function TaskDetails() {
     setSuccess("");
     setCompletingStage(true);
     try {
-      const result = await completeTaskStage(taskId);
+      const result = await completeTaskStage(taskId, {
+        preferredUserId: preferredNextUserId || null,
+        description: stageDescription.trim(),
+      });
       setSuccess(result?.message || "Stage completed");
+      setPreferredNextUserId("");
+      setStageDescription("");
       await loadTaskData();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to complete stage");
     } finally {
       setCompletingStage(false);
+    }
+  };
+
+  const handleRejectStage = async () => {
+    setError("");
+    setSuccess("");
+    setRejectingStage(true);
+    try {
+      const result = await rejectTaskStage(taskId, {
+        description: stageDescription.trim(),
+      });
+      setSuccess(result?.message || "Stage rejected");
+      setPreferredNextUserId("");
+      setStageDescription("");
+      await loadTaskData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to reject stage");
+    } finally {
+      setRejectingStage(false);
     }
   };
 
@@ -293,14 +396,16 @@ export default function TaskDetails() {
             <p className="text-sm text-slate-400">Task ID: {task._id}</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={deleting}
-              className="rounded-xl border border-rose-400/30 bg-rose-500/12 px-4 py-2 text-sm text-rose-200 hover:bg-rose-500/18 disabled:opacity-60"
-            >
-              {deleting ? "Deleting..." : "Delete Task"}
-            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="rounded-xl border border-rose-400/30 bg-rose-500/12 px-4 py-2 text-sm text-rose-200 hover:bg-rose-500/18 disabled:opacity-60"
+              >
+                {deleting ? "Deleting..." : "Delete Task"}
+              </button>
+            )}
             <Link
               to="/tasks"
               className="rounded-xl border border-emerald-400/30 bg-emerald-500/12 px-4 py-2 text-sm text-emerald-200 hover:bg-emerald-500/18"
@@ -325,9 +430,21 @@ export default function TaskDetails() {
       <section className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-5 text-sm text-slate-300 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
         <p className="font-medium text-white">How to use this page</p>
         <p className="mt-2 text-slate-400">
-          The left side shows stage progress and team-based actions. The right side lets
-          you edit the task&apos;s workflow, assignment, and status.
+          The left side shows stage progress and team-based actions.
+          {isAdmin
+            ? " Admins can also edit the task's workflow, assignment, and status."
+            : " Editing task details is available to admins only."}
         </p>
+        {task?.description && (
+          <div className="mt-4 rounded-2xl border border-slate-800/90 bg-slate-950/70 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Task Description
+            </p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">
+              {task.description}
+            </p>
+          </div>
+        )}
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_2fr]">
@@ -336,7 +453,16 @@ export default function TaskDetails() {
             task={task}
             canCompleteStage={canCompleteStage}
             completingStage={completingStage}
+            rejectingStage={rejectingStage}
             onComplete={handleCompleteStage}
+            onReject={handleRejectStage}
+            previousStage={previousWorkflowStage}
+            nextStage={nextWorkflowStage}
+            preferredUserId={preferredNextUserId}
+            nextStageMembers={nextStageMembers}
+            onPreferredUserChange={setPreferredNextUserId}
+            stageDescription={stageDescription}
+            onStageDescriptionChange={setStageDescription}
           />
           <TaskTimeline workflow={timelineWorkflow} task={task} />
 
@@ -365,44 +491,45 @@ export default function TaskDetails() {
           )}
         </div>
 
-        <section className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-6 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-semibold text-white">Edit Task</h2>
-            <div className="inline-flex rounded-xl border border-slate-700 bg-slate-950/70 p-1">
-              <button
-                type="button"
-                onClick={() => setMode("workflow")}
-                className={`rounded-lg px-3 py-1.5 text-sm ${
-                  taskMode === "workflow"
-                    ? "bg-cyan-500 text-slate-950"
-                    : "text-slate-300 hover:bg-slate-900"
-                }`}
-              >
-                Workflow Mode
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("standalone")}
-                className={`rounded-lg px-3 py-1.5 text-sm ${
-                  taskMode === "standalone"
-                    ? "bg-cyan-500 text-slate-950"
-                    : "text-slate-300 hover:bg-slate-900"
-                }`}
-              >
-                Standalone Mode
-              </button>
+        {isAdmin ? (
+          <section className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-6 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-semibold text-white">Edit Task</h2>
+              <div className="inline-flex rounded-xl border border-slate-700 bg-slate-950/70 p-1">
+                <button
+                  type="button"
+                  onClick={() => setMode("workflow")}
+                  className={`rounded-lg px-3 py-1.5 text-sm ${
+                    taskMode === "workflow"
+                      ? "bg-cyan-500 text-slate-950"
+                      : "text-slate-300 hover:bg-slate-900"
+                  }`}
+                >
+                  Workflow Mode
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("standalone")}
+                  className={`rounded-lg px-3 py-1.5 text-sm ${
+                    taskMode === "standalone"
+                      ? "bg-cyan-500 text-slate-950"
+                      : "text-slate-300 hover:bg-slate-900"
+                  }`}
+                >
+                  Standalone Mode
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="mb-4 rounded-2xl border border-slate-800/90 bg-slate-950/70 p-4 text-sm text-slate-300">
-            <p className="font-medium text-white">Mode guide</p>
-            <p className="mt-2 text-slate-400">
-              Workflow mode keeps the task tied to an ordered process. Standalone mode is for
-              direct work items that only need a team or assignee.
-            </p>
-          </div>
+            <div className="mb-4 rounded-2xl border border-slate-800/90 bg-slate-950/70 p-4 text-sm text-slate-300">
+              <p className="font-medium text-white">Mode guide</p>
+              <p className="mt-2 text-slate-400">
+                Workflow mode keeps the task tied to an ordered process. Standalone mode is for
+                direct work items that only need a team or assignee.
+              </p>
+            </div>
 
-          <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+            <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
             <label className="space-y-1 md:col-span-2">
               <span className="text-sm text-slate-300">Title</span>
               <input
@@ -411,6 +538,17 @@ export default function TaskDetails() {
                 onChange={(e) => setField("title", e.target.value)}
                 className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                 required
+              />
+            </label>
+
+            <label className="space-y-1 md:col-span-2">
+              <span className="text-sm text-slate-300">Description</span>
+              <textarea
+                value={form.description}
+                onChange={(e) => setField("description", e.target.value)}
+                rows={5}
+                className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                placeholder="Add task context, expected outcome, or handoff notes"
               />
             </label>
 
@@ -508,8 +646,31 @@ export default function TaskDetails() {
                 {saving ? "Saving..." : "Save Changes"}
               </button>
             </div>
-          </form>
-        </section>
+            </form>
+          </section>
+        ) : (
+          <section className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-6 text-sm text-slate-300 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
+            <h2 className="text-xl font-semibold text-white">Task Details</h2>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Status</p>
+                <p className="mt-2 font-medium text-white">{task.status}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Assignee</p>
+                <p className="mt-2 font-medium text-white">{task.assignedTo?.name || "Unassigned"}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Workflow</p>
+                <p className="mt-2 font-medium text-white">{task.workflowId?.name || "None"}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Current Stage</p>
+                <p className="mt-2 font-medium text-white">{task.stageName || "None"}</p>
+              </div>
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

@@ -117,7 +117,7 @@ export default function Home() {
             {[
               { icon: "⚙️", title: "Workflow Builder", desc: "Multi-stage pipelines with custom approval hierarchies." },
               { icon: "📌", title: "Task Tracking", desc: "Full status visibility across every request and stage." },
-              { icon: "⏱", title: "SLA Monitoring", desc: "Automatic breach detection before deadlines slip." },
+              { icon: "⏱", title: "Stage Visibility", desc: "Spot stalled requests and handoffs before work slows down." },
               { icon: "🛡", title: "Audit Logs", desc: "Immutable record of every action for compliance." },
               { icon: "📊", title: "Analytics", desc: "Measure bottlenecks and workload distribution." },
               { icon: "🏢", title: "Multi-Tenant", desc: "Isolated orgs with separate users and data." },
@@ -143,7 +143,7 @@ export default function Home() {
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32 }}>
             {[
-              { n: "01", title: "Define your workflow", body: "Map out stages, assign responsible teams, set escalation rules and SLA targets per step." },
+              { n: "01", title: "Define your workflow", body: "Map out stages, assign responsible teams, and set clear ownership for every step." },
               { n: "02", title: "Track in real time", body: "Requests move through your pipeline automatically. Every stakeholder sees current status instantly." },
               { n: "03", title: "Analyze and improve", body: "Spot bottlenecks, measure throughput, and continuously refine based on real performance data." },
             ].map((s, i) => (
@@ -186,7 +186,7 @@ export default function Home() {
           <div style={{ width: 22, height: 22, background: "var(--green)", borderRadius: 5 }} />
           <span style={{ fontFamily: "'Instrument Sans'", fontWeight: 700, fontSize: "0.9rem" }}>IntelliFlow</span>
         </div>
-        <p style={{ fontSize: "0.78rem", color: "var(--muted)" }}>© {new Date().getFullYear()} IntelliFlow · MERN + SLA + Audit Compliance</p>
+        <p style={{ fontSize: "0.78rem", color: "var(--muted)" }}>© {new Date().getFullYear()} IntelliFlow · MERN + Audit Compliance</p>
         <div style={{ display: "flex", gap: 20 }}>
           {["Privacy", "Terms", "Docs"].map(l => (
             <a key={l} href="#" style={{ fontSize: "0.78rem", color: "var(--muted)", transition: "color 0.2s" }}

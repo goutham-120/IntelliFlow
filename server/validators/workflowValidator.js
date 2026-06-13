@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import { isNonEmptyString, normalizeBoolean } from "./validatorHelpers.js";
 
+const allowedAssignmentTypes = new Set(["auto", "manual"]);
+
 const validateAndNormalizeStages = (stages) => {
   if (!Array.isArray(stages) || stages.length === 0) {
     return { error: "At least one stage is required" };
@@ -14,6 +16,7 @@ const validateAndNormalizeStages = (stages) => {
     const rawName = stage?.name;
     const rawOrder = stage?.order;
     const rawGroupId = stage?.groupId;
+    const rawAssignmentType = stage?.assignmentType;
 
     if (!isNonEmptyString(rawName)) {
       return { error: "Each stage must have a valid name" };
@@ -25,6 +28,15 @@ const validateAndNormalizeStages = (stages) => {
 
     if (!mongoose.isValidObjectId(rawGroupId)) {
       return { error: "Each stage must have a valid groupId" };
+    }
+
+    const assignmentType =
+      rawAssignmentType === undefined || rawAssignmentType === null
+        ? "auto"
+        : String(rawAssignmentType).trim().toLowerCase();
+
+    if (!allowedAssignmentTypes.has(assignmentType)) {
+      return { error: 'Each stage assignmentType must be either "auto" or "manual"' };
     }
 
     const name = rawName.trim();
@@ -42,6 +54,7 @@ const validateAndNormalizeStages = (stages) => {
       name,
       order: rawOrder,
       groupId: rawGroupId,
+      assignmentType,
     });
   }
 

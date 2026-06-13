@@ -37,6 +37,11 @@ const taskSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     status: {
       type: String,
       enum: ["pending", "in_progress", "done", "blocked", "rejected", "needs_changes"],
@@ -46,6 +51,7 @@ const taskSchema = new mongoose.Schema(
       type: [
         {
           stageName: { type: String, required: true, trim: true },
+          description: { type: String, default: "", trim: true },
           completedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",

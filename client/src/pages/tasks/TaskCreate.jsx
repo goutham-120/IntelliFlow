@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { fetchGroups } from "../../services/groupService";
+import { fetchGroupMembers, fetchGroups } from "../../services/groupService";
 import { createTask } from "../../services/taskService";
 import { fetchWorkflows } from "../../services/workflowService";
 
@@ -14,8 +14,11 @@ export default function TaskCreate() {
 
   const [createMode, setCreateMode] = useState("workflow");
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [workflowId, setWorkflowId] = useState("");
   const [assignedGroupId, setAssignedGroupId] = useState("");
+  const [assignedTo, setAssignedTo] = useState("");
+  const [stageMembers, setStageMembers] = useState([]);
 
   const user = useMemo(() => {
     try {
@@ -26,6 +29,18 @@ export default function TaskCreate() {
     }
   }, []);
   const isAdmin = user?.role === "admin";
+
+  const selectedWorkflow = useMemo(
+    () => workflows.find((workflow) => workflow._id === workflowId) || null,
+    [workflowId, workflows]
+  );
+
+  const initialWorkflowStage = useMemo(() => {
+    const stages = [...(selectedWorkflow?.stages || [])].sort((a, b) => a.order - b.order);
+    return stages[0] || null;
+  }, [selectedWorkflow]);
+
+  const initialStageAssignmentType = initialWorkflowStage?.assignmentType || "auto";
 
   useEffect(() => {
     const loadData = async () => {
@@ -47,6 +62,49 @@ export default function TaskCreate() {
     loadData();
   }, [isAdmin]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadStageMembers = async () => {
+      if (createMode !== "workflow" || initialStageAssignmentType !== "manual") {
+        setAssignedTo("");
+        setStageMembers([]);
+        return;
+      }
+
+      const stageGroupId =
+        typeof initialWorkflowStage?.groupId === "string"
+          ? initialWorkflowStage.groupId
+          : initialWorkflowStage?.groupId?._id;
+
+      if (!stageGroupId) {
+        setAssignedTo("");
+        setStageMembers([]);
+        return;
+      }
+
+      try {
+        const membersData = await fetchGroupMembers(stageGroupId);
+        if (cancelled) return;
+        const memberships = Array.isArray(membersData?.memberships) ? membersData.memberships : [];
+        const activeMembers = memberships
+          .map((membership) => membership.userId)
+          .filter((member) => member?.isActive);
+        setStageMembers(activeMembers);
+      } catch {
+        if (!cancelled) {
+          setStageMembers([]);
+        }
+      }
+    };
+
+    loadStageMembers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [createMode, initialStageAssignmentType, initialWorkflowStage]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
@@ -57,13 +115,19 @@ export default function TaskCreate() {
       return;
     }
 
-    const payload = { title: trimmedTitle };
+    const payload = {
+      title: trimmedTitle,
+      description: description.trim(),
+    };
     if (createMode === "workflow") {
       if (!workflowId) {
         setError("Select a workflow for workflow-driven task creation");
         return;
       }
       payload.workflowId = workflowId;
+      if (initialStageAssignmentType === "manual" && assignedTo) {
+        payload.assignedTo = assignedTo;
+      }
     } else if (assignedGroupId) {
       payload.assignedGroupId = assignedGroupId;
     }
@@ -144,21 +208,65 @@ export default function TaskCreate() {
               required
             />
 
+            <textarea
+              placeholder="Task description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              rows={4}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+            />
+
             {createMode === "workflow" ? (
-              <select
-                value={workflowId}
-                onChange={(event) => setWorkflowId(event.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
-              >
-                <option value="">Select workflow</option>
-                {workflows
-                  .filter((workflow) => workflow?.isActive)
-                  .map((workflow) => (
-                    <option key={workflow._id} value={workflow._id}>
-                      {workflow.name}
-                    </option>
-                  ))}
-              </select>
+              <>
+                <select
+                  value={workflowId}
+                  onChange={(event) => setWorkflowId(event.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                >
+                  <option value="">Select workflow</option>
+                  {workflows
+                    .filter((workflow) => workflow?.isActive)
+                    .map((workflow) => (
+                      <option key={workflow._id} value={workflow._id}>
+                        {workflow.name}
+                      </option>
+                    ))}
+                </select>
+                {selectedWorkflow && initialWorkflowStage && (
+                  <div className="rounded-2xl border border-slate-800/90 bg-slate-950/70 p-4 text-sm text-slate-300">
+                    <p className="font-medium text-white">
+                      First stage: {initialWorkflowStage.order}. {initialWorkflowStage.name}
+                    </p>
+                    <p className="mt-1 text-slate-400">
+                      Assignment mode:{" "}
+                      {initialStageAssignmentType === "manual"
+                        ? "manual selection"
+                        : "automatic workload assignment"}
+                    </p>
+                  </div>
+                )}
+                {selectedWorkflow && initialStageAssignmentType === "manual" && (
+                  <div className="space-y-2">
+                    <label className="block text-sm text-slate-300">Initial Stage Assignee</label>
+                    <select
+                      value={assignedTo}
+                      onChange={(event) => setAssignedTo(event.target.value)}
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                    >
+                      <option value="">Auto assign if left empty</option>
+                      {stageMembers.map((member) => (
+                        <option key={member._id} value={member._id}>
+                          {member.name} ({member.email})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-slate-500">
+                      Pick someone from the first stage team now, or leave it empty to use auto
+                      assignment.
+                    </p>
+                  </div>
+                )}
+              </>
             ) : (
               <select
                 value={assignedGroupId}

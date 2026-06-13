@@ -7,13 +7,6 @@ export const TASK_STATUS_OPTIONS = [
   { value: "blocked", label: "Blocked" },
 ];
 
-export const SLA_STATUS_META = {
-  on_track: { label: "On Track", tone: "emerald" },
-  warning: { label: "Warning", tone: "amber" },
-  breached: { label: "Breached", tone: "rose" },
-  completed: { label: "Completed", tone: "cyan" },
-};
-
 export const GROUP_ROLE_OPTIONS = [
   { value: "member", label: "Member" },
   { value: "team_lead", label: "Team Lead" },

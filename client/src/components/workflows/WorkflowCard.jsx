@@ -45,6 +45,9 @@ export default function WorkflowCard({
               <span className="ml-1 text-slate-500">
                 - {getStageGroupLabel(stage.groupId, groupsById)}
               </span>
+              <span className="ml-1 text-slate-500">
+                - {(stage.assignmentType || "auto") === "manual" ? "Manual select" : "Auto assign"}
+              </span>
             </span>
           ))}
       </div>

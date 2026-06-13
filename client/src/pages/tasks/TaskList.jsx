@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import TaskTable from "../../components/tasks/TaskTable";
 import { TASK_STATUS_OPTIONS } from "../../utils/constants";
 import { fetchTasks, updateTask } from "../../services/taskService";
+import useRole from "../../hooks/useRole";
 
 export default function TaskList() {
   const location = useLocation();
@@ -13,6 +14,7 @@ export default function TaskList() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const { isAdmin } = useRole();
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -40,6 +42,8 @@ export default function TaskList() {
   }, [location.pathname, location.state, navigate]);
 
   const handleQuickStatusUpdate = async (taskId, status) => {
+    if (!isAdmin) return;
+
     setError("");
     setSuccess("");
     setUpdatingTaskId(taskId);
@@ -108,7 +112,7 @@ export default function TaskList() {
         <p className="font-medium text-white">Quick orientation</p>
         <p className="mt-2 text-slate-400">
           Each card below shows a task, its workflow stage, current team, and current
-          assignee. Use the status picker on the card to make small updates quickly.
+          assignee. Admins can use the status picker on the card to make small updates quickly.
         </p>
       </section>
 
@@ -118,6 +122,7 @@ export default function TaskList() {
           loading={loading}
           updatingTaskId={updatingTaskId}
           onQuickStatusUpdate={handleQuickStatusUpdate}
+          canEditTasks={isAdmin}
         />
       </section>
     </div>

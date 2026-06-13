@@ -1,13 +1,19 @@
 import api from "./api";
 
-// Get all users (Admin only)
 export const fetchUsers = async () => {
   const response = await api.get("/users");
   return response.data;
 };
 
-// Create new user (Admin only)
 export const createUser = async (data) => {
   const response = await api.post("/users", data);
+  return response.data;
+};
+
+// ─── NEW ───────────────────────────────────────────────────────────────────
+// Activates or deactivates a user. Expects the backend route:
+//   PATCH /users/:userId/status   body: { isActive: boolean }
+export const setUserActiveStatus = async (userId, isActive) => {
+  const response = await api.patch(`/users/${userId}/status`, { isActive });
   return response.data;
 };

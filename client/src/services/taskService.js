@@ -28,8 +28,14 @@ export const deleteTask = async (taskId) => {
   return response.data;
 };
 
-export const completeTaskStage = async (taskId) => {
-  const response = await api.post(`/tasks/${taskId}/complete-stage`);
+export const completeTaskStage = async (taskId, data = {}) => {
+  const response = await api.post(`/tasks/${taskId}/complete-stage`, data);
+  emitInboxUpdated();
+  return response.data;
+};
+
+export const rejectTaskStage = async (taskId, data = {}) => {
+  const response = await api.post(`/tasks/${taskId}/reject-stage`, data);
   emitInboxUpdated();
   return response.data;
 };

@@ -11,7 +11,7 @@ export default function WorkflowStageEditor({
       {stages.map((stage, index) => (
         <div
           key={`stage-${index}`}
-          className="grid gap-3 rounded-2xl border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.06),transparent_30%),linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.84))] p-3 md:grid-cols-[1fr_1fr_auto]"
+          className="grid gap-3 rounded-2xl border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.06),transparent_30%),linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.84))] p-3 md:grid-cols-[1fr_1fr_1fr_auto]"
         >
           <input
             type="text"
@@ -35,6 +35,15 @@ export default function WorkflowStageEditor({
                 {group.name}
               </option>
             ))}
+          </select>
+          <select
+            value={stage.assignmentType || "auto"}
+            onChange={(event) => onStageChange(index, "assignmentType", event.target.value)}
+            className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+            disabled={disabled}
+          >
+            <option value="auto">Auto Assign</option>
+            <option value="manual">Manual Select</option>
           </select>
           <button
             type="button"

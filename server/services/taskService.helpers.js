@@ -157,3 +157,27 @@ export const buildTaskQuery = ({ organizationId, status, workflowId, assignedTo,
   if (onlyMine) query.assignedTo = userId;
   return query;
 };
+
+export const resolveStageAssignee = async ({
+  organizationId,
+  stage,
+  preferredUserId,
+}) => {
+  const assignmentType = stage?.assignmentType || "auto";
+
+  if (assignmentType === "manual" && preferredUserId) {
+    await ensureUserInOrg({ organizationId, userId: preferredUserId });
+    await ensureActiveGroupMember({
+      organizationId,
+      groupId: stage.groupId,
+      userId: preferredUserId,
+    });
+    return preferredUserId;
+  }
+
+  const selectedMember = await selectLeastLoadedGroupMember({
+    organizationId,
+    groupId: stage.groupId,
+  });
+  return selectedMember.userId._id;
+};

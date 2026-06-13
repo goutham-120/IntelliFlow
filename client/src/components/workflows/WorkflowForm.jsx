@@ -2,7 +2,7 @@ import { useState } from "react";
 import ToggleButton from "../common/ToggleButton";
 import WorkflowStageEditor from "./WorkflowStageEditor";
 
-const createEmptyStage = () => ({ name: "", groupId: "" });
+const createEmptyStage = () => ({ name: "", groupId: "", assignmentType: "auto" });
 
 const mapIncomingStages = (stages = []) => {
   if (!Array.isArray(stages) || stages.length === 0) {
@@ -14,6 +14,7 @@ const mapIncomingStages = (stages = []) => {
     .map((stage) => ({
       name: stage.name || "",
       groupId: typeof stage.groupId === "string" ? stage.groupId : stage.groupId?._id || "",
+      assignmentType: stage.assignmentType || "auto",
     }));
 };
 
@@ -51,6 +52,7 @@ export default function WorkflowForm({
     const normalizedStages = stages.map((stage, index) => ({
       name: stage.name.trim(),
       groupId: stage.groupId,
+      assignmentType: stage.assignmentType || "auto",
       order: index + 1,
     }));
 

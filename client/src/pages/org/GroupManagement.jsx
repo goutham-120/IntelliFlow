@@ -9,6 +9,7 @@ import {
   updateGroup,
   updateGroupMemberRole,
 } from "../../services/groupService";
+import { MemberModal, TeamModal } from "./GroupManagementModals";
 
 const defaultGroupForm = {
   name: "",
@@ -41,6 +42,7 @@ export default function GroupManagement() {
   const [success, setSuccess] = useState("");
 
   const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [openEditModal, setOpenEditModal] = useState(false);
   const [openMemberModal, setOpenMemberModal] = useState(false);
 
   const selectedGroup = useMemo(
@@ -133,16 +135,28 @@ export default function GroupManagement() {
     }
   };
 
-  const handleUpdateGroup = async () => {
+  const openTeamEditor = () => {
+    if (!selectedGroup) return;
+    clearMessages();
+    setEditGroupForm({
+      name: selectedGroup.name || "",
+      code: selectedGroup.code || "",
+      description: selectedGroup.description || "",
+    });
+    setOpenEditModal(true);
+  };
+
+  const handleUpdateGroup = async (event) => {
+    event.preventDefault();
     if (!selectedGroup) return;
     clearMessages();
     setSubmitting(true);
     try {
       const payload = {};
-      if (editGroupForm.name?.trim()) payload.name = editGroupForm.name;
-      if (editGroupForm.code?.trim()) payload.code = editGroupForm.code;
+      if (editGroupForm.name?.trim()) payload.name = editGroupForm.name.trim();
+      if (editGroupForm.code?.trim()) payload.code = editGroupForm.code.trim();
       if (typeof editGroupForm.description === "string") {
-        payload.description = editGroupForm.description;
+        payload.description = editGroupForm.description.trim();
       }
 
       if (!Object.keys(payload).length) {
@@ -153,6 +167,7 @@ export default function GroupManagement() {
       const data = await updateGroup(selectedGroup._id, payload);
       setSuccess(data?.message || "Team updated");
       setEditGroupForm({});
+      setOpenEditModal(false);
       await loadGroups();
       await loadMembers(selectedGroup._id);
     } catch (err) {
@@ -261,14 +276,6 @@ export default function GroupManagement() {
         </div>
       )}
 
-      <section className="rounded-[2rem] border border-slate-700/80 bg-slate-950/72 p-5 text-sm text-slate-300 shadow-[0_18px_45px_rgba(2,6,23,0.24)]">
-        <p className="font-medium text-white">Beginner guide</p>
-        <p className="mt-2 text-slate-300">
-          A team works like a responsibility bucket. Workflows assign stages to teams, and
-          team members can then take responsibility for tasks that enter those stages.
-        </p>
-      </section>
-
       <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
         <section className="rounded-[2rem] border border-slate-700/80 bg-slate-950/72 p-4 shadow-[0_18px_45px_rgba(2,6,23,0.24)]">
           <div className="mb-4 flex items-center justify-between">
@@ -350,6 +357,12 @@ export default function GroupManagement() {
                 {isAdmin && (
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <button
+                      onClick={openTeamEditor}
+                      className="rounded-xl border border-sky-400/25 bg-sky-400/12 px-4 py-2 text-sm font-medium text-sky-200 transition hover:border-sky-300/40 hover:bg-sky-400/18"
+                    >
+                      Edit
+                    </button>
+                    <button
                       onClick={() => setOpenMemberModal(true)}
                       className="rounded-xl border border-teal-400/25 bg-teal-400/12 px-4 py-2 text-sm font-medium text-teal-200 transition hover:border-teal-300/40 hover:bg-teal-400/18"
                     >
@@ -358,53 +371,6 @@ export default function GroupManagement() {
                   </div>
                 )}
               </div>
-
-              {isAdmin && (
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/72 p-4">
-                  <p className="mb-3 text-sm font-medium text-white">Quick Update Team</p>
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <input
-                      type="text"
-                      placeholder="Name"
-                      value={editGroupForm.name || ""}
-                      onChange={(event) =>
-                        setEditGroupForm((prev) => ({ ...prev, name: event.target.value }))
-                      }
-                      className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none transition focus:border-teal-300"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Code"
-                      value={editGroupForm.code || ""}
-                      onChange={(event) =>
-                        setEditGroupForm((prev) => ({ ...prev, code: event.target.value }))
-                      }
-                      className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none transition focus:border-teal-300"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Description"
-                      value={editGroupForm.description || ""}
-                      onChange={(event) =>
-                        setEditGroupForm((prev) => ({
-                          ...prev,
-                          description: event.target.value,
-                        }))
-                      }
-                      className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none transition focus:border-teal-300"
-                    />
-                  </div>
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      onClick={handleUpdateGroup}
-                      disabled={submitting}
-                      className="rounded-xl bg-teal-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-teal-300 disabled:opacity-60"
-                    >
-                      Save Changes
-                    </button>
-                  </div>
-                </div>
-              )}
 
               <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70">
                 <div className="border-b border-slate-800 px-4 py-3">
@@ -431,7 +397,7 @@ export default function GroupManagement() {
                         {memberships.map((membership) => (
                           <tr
                             key={membership._id}
-                            className="border-t border-slate-800 hover:bg-white/5"
+                            className="border-t border-slate-800 hover:bg-slate-900/80"
                           >
                             <td className="px-4 py-3 font-medium text-white">
                               {membership.userId?.name || "-"}
@@ -487,119 +453,41 @@ export default function GroupManagement() {
         </section>
       </div>
 
-      {openCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-[2rem] border border-slate-700 bg-slate-950 p-6 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.45)]">
-            <h3 className="font-['Baloo_2'] text-xl font-semibold text-white">Create Team</h3>
-            <p className="mt-1 text-sm text-slate-400">
-              Define a team for workflow stage assignments.
-            </p>
+      <TeamModal
+        description="Define a team for workflow stage assignments."
+        form={groupForm}
+        onClose={() => setOpenCreateModal(false)}
+        onSubmit={handleCreateGroup}
+        open={openCreateModal}
+        required
+        setForm={setGroupForm}
+        submitLabel="Create Team"
+        submitting={submitting}
+        title="Create Team"
+      />
 
-            <form className="mt-5 space-y-3" onSubmit={handleCreateGroup}>
-              <input
-                type="text"
-                placeholder="Team Name"
-                required
-                value={groupForm.name}
-                onChange={(event) =>
-                  setGroupForm((prev) => ({ ...prev, name: event.target.value }))
-                }
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-200 outline-none transition focus:border-teal-300"
-              />
-              <input
-                type="text"
-                placeholder="Team Code"
-                required
-                value={groupForm.code}
-                onChange={(event) =>
-                  setGroupForm((prev) => ({ ...prev, code: event.target.value }))
-                }
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 uppercase text-slate-200 outline-none transition focus:border-teal-300"
-              />
-              <textarea
-                placeholder="Description (optional)"
-                rows={3}
-                value={groupForm.description}
-                onChange={(event) =>
-                  setGroupForm((prev) => ({ ...prev, description: event.target.value }))
-                }
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-200 outline-none transition focus:border-teal-300"
-              />
+      <TeamModal
+        description="Update the selected team's name, code, or description."
+        descriptionPlaceholder="Description"
+        form={editGroupForm}
+        onClose={() => setOpenEditModal(false)}
+        onSubmit={handleUpdateGroup}
+        open={openEditModal}
+        setForm={setEditGroupForm}
+        submitLabel="Save Changes"
+        submitting={submitting}
+        title="Edit Team"
+      />
 
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setOpenCreateModal(false)}
-                  className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="rounded-xl bg-teal-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-teal-300 disabled:opacity-60"
-                >
-                  Create Team
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {openMemberModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[2rem] border border-slate-700 bg-slate-950 p-6 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.45)]">
-            <h3 className="font-['Baloo_2'] text-xl font-semibold text-white">
-              Add Team Member
-            </h3>
-            <form className="mt-4 space-y-3" onSubmit={handleAddMember}>
-              <select
-                required
-                value={memberForm.userId}
-                onChange={(event) =>
-                  setMemberForm((prev) => ({ ...prev, userId: event.target.value }))
-                }
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-200 outline-none transition focus:border-teal-300"
-              >
-                <option value="">Select user</option>
-                {availableUsers.map((user) => (
-                  <option key={user._id} value={user._id}>
-                    {user.name} ({user.role})
-                  </option>
-                ))}
-              </select>
-              <select
-                value={memberForm.roleInGroup}
-                onChange={(event) =>
-                  setMemberForm((prev) => ({ ...prev, roleInGroup: event.target.value }))
-                }
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-200 outline-none transition focus:border-teal-300"
-              >
-                <option value="member">member</option>
-                <option value="team_lead">Team Lead</option>
-              </select>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setOpenMemberModal(false)}
-                  className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="rounded-xl bg-teal-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-teal-300 disabled:opacity-60"
-                >
-                  Add Member
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <MemberModal
+        availableUsers={availableUsers}
+        form={memberForm}
+        onClose={() => setOpenMemberModal(false)}
+        onSubmit={handleAddMember}
+        open={openMemberModal}
+        setForm={setMemberForm}
+        submitting={submitting}
+      />
     </div>
   );
 }

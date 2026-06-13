@@ -17,6 +17,11 @@ const workflowStageSchema = new mongoose.Schema(
       ref: "Group",
       required: true,
     },
+    assignmentType: {
+      type: String,
+      enum: ["auto", "manual"],
+      default: "auto",
+    },
   },
   { _id: false }
 );
