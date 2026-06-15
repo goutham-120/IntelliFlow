@@ -23,7 +23,7 @@
 
 ## Overview
 
-IntelliFlow is a full-stack MERN workflow management application designed to help organizations create workflows, assign tasks, manage teams, and track work through role-based dashboards.
+IntelliFlow is a full-stack MERN workflow management application designed to help organizations create workflows, assign tasks, manage teams, track work and performance through role-based dashboards.
 
 The application supports organization registration, secure authentication, admin/user access control, group-based task assignment, workflow stages, inbox actions, analytics, and audit-oriented management views.
 
@@ -52,7 +52,7 @@ The application supports organization registration, secure authentication, admin
 | Database | MongoDB, Mongoose |
 | Authentication | JWT, bcryptjs |
 | Tooling | ESLint, PostCSS, Nodemon |
-| Deployment | Vercel frontend, Node/Express backend compatible |
+| Deployment | Vercel-frontend, Render-backend, database-mongodb atlas|
 
 ## Project Structure
 
@@ -94,7 +94,7 @@ Make sure you have the following installed:
 ### 1. Clone the repository
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/goutham-120/IntelliFlow.git
 cd IntelliFlow
 ```
 
