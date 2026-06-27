@@ -9,14 +9,9 @@ import { fetchTasks } from "../../services/taskService";
 import { formatDateTime } from "../../utils/formatDate";
 
 const ACTIVE_STATUSES = new Set(["pending", "in_progress", "blocked", "needs_changes"]);
-
 const toId = (value) => String(value || "");
-
 const toTitle = (value) =>
-  String(value || "")
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+  String(value || "").split("_").map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
 
 const TONE_CLASSES = {
   emerald: "text-emerald-400",
@@ -25,15 +20,14 @@ const TONE_CLASSES = {
   rose: "text-rose-400",
 };
 
-const cardClass = "rounded-2xl border border-slate-800 bg-slate-900/80 p-5";
+const cardClass = "rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5";
 
-// ─── Shared small components ──────────────────────────────────────────────────
 function StatCard({ title, value, hint, tone = "emerald" }) {
   return (
     <article className={cardClass}>
-      <p className="text-sm text-slate-400">{title}</p>
-      <p className={`mt-3 text-3xl font-bold ${TONE_CLASSES[tone]}`}>{value}</p>
-      <p className="mt-2 text-xs text-slate-500">{hint}</p>
+      <p className="text-xs text-slate-400 sm:text-sm">{title}</p>
+      <p className={`mt-2 text-2xl font-bold sm:text-3xl ${TONE_CLASSES[tone]}`}>{value}</p>
+      <p className="mt-1 text-xs text-slate-500">{hint}</p>
     </article>
   );
 }
@@ -42,9 +36,9 @@ function SectionCard({ title, linkTo, linkLabel, children }) {
   return (
     <section className={cardClass}>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-white">{title}</h2>
+        <h2 className="text-base font-semibold text-white sm:text-lg">{title}</h2>
         {linkTo && (
-          <Link to={linkTo} className="text-sm text-emerald-400 hover:underline">
+          <Link to={linkTo} className="text-xs text-emerald-400 hover:underline sm:text-sm">
             {linkLabel}
           </Link>
         )}
@@ -59,7 +53,7 @@ function EmptyState({ children }) {
 }
 
 function Row({ children }) {
-  return <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">{children}</article>;
+  return <article className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 sm:p-4">{children}</article>;
 }
 
 function Pill({ children, tone = "default" }) {
@@ -69,10 +63,13 @@ function Pill({ children, tone = "default" }) {
       : tone === "read"
         ? "bg-slate-800 text-slate-400"
         : "border border-slate-700 bg-slate-950/75 text-slate-300";
-  return <span className={`rounded-full px-2.5 py-1 text-xs capitalize ${toneClass}`}>{children}</span>;
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs capitalize sm:px-2.5 sm:py-1 ${toneClass}`}>
+      {children}
+    </span>
+  );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { user } = useAuth();
   const userId = user?.id || user?._id || "";
@@ -85,11 +82,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadDashboard = async () => {
-      if (!userId) {
-        setLoading(false);
-        return;
-      }
-
+      if (!userId) { setLoading(false); return; }
       setLoading(true);
       setError("");
       try {
@@ -98,14 +91,12 @@ export default function Dashboard() {
           fetchInboxNotifications({ limit: 6 }),
           fetchUserGroups(userId),
         ]);
-
         setTasks(taskResult.status === "fulfilled" && Array.isArray(taskResult.value) ? taskResult.value : []);
         setNotifications(inboxResult.status === "fulfilled" && Array.isArray(inboxResult.value) ? inboxResult.value : []);
         setMemberships(groupsResult.status === "fulfilled" && Array.isArray(groupsResult.value) ? groupsResult.value : []);
-
         if (taskResult.status === "rejected" && inboxResult.status === "rejected") {
-          const fallbackError = taskResult.reason || inboxResult.reason;
-          setError(fallbackError?.response?.data?.message || "Unable to fetch live data right now");
+          const fallback = taskResult.reason || inboxResult.reason;
+          setError(fallback?.response?.data?.message || "Unable to fetch live data right now");
         }
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load dashboard");
@@ -113,115 +104,93 @@ export default function Dashboard() {
         setLoading(false);
       }
     };
-
     loadDashboard();
   }, [userId]);
 
   const myMetrics = useMemo(() => {
     const myUserId = toId(userId);
-    const myTasks = tasks.filter((task) => toId(task.assignedTo?._id || task.assignedTo) === myUserId);
-    const myActiveTasks = myTasks.filter((task) => ACTIVE_STATUSES.has(task.status));
-
-    const myStageEntries = tasks.flatMap((task) =>
-      (task.completedStages || [])
-        .filter((entry) => toId(entry.completedBy?._id || entry.completedBy) === myUserId)
-        .map((entry) => ({
-          taskId: task._id,
-          stageName: entry.stageName || "Unnamed Stage",
-        }))
+    const myTasks = tasks.filter((t) => toId(t.assignedTo?._id || t.assignedTo) === myUserId);
+    const myActiveTasks = myTasks.filter((t) => ACTIVE_STATUSES.has(t.status));
+    const myStageEntries = tasks.flatMap((t) =>
+      (t.completedStages || [])
+        .filter((e) => toId(e.completedBy?._id || e.completedBy) === myUserId)
+        .map((e) => ({ taskId: t._id, stageName: e.stageName || "Unnamed Stage" }))
     );
-
-    const stageBreakdownMap = myStageEntries.reduce((acc, entry) => {
-      acc.set(entry.stageName, (acc.get(entry.stageName) || 0) + 1);
+    const stageBreakdownMap = myStageEntries.reduce((acc, e) => {
+      acc.set(e.stageName, (acc.get(e.stageName) || 0) + 1);
       return acc;
     }, new Map());
-
     const stageBreakdown = Array.from(stageBreakdownMap.entries())
       .map(([stageName, count]) => ({ stageName, count }))
       .sort((a, b) => b.count - a.count || a.stageName.localeCompare(b.stageName));
-
-    const contributedTaskIds = new Set(myStageEntries.map((entry) => toId(entry.taskId)));
-    const unreadNotifications = notifications.filter((item) => !item.isRead).length;
-
+    const contributedTaskIds = new Set(myStageEntries.map((e) => toId(e.taskId)));
+    const unreadNotifications = notifications.filter((n) => !n.isRead).length;
     return {
       myActiveTasks,
       myStageEntries,
       stageBreakdown,
       unreadNotifications,
       contributedTaskCount: contributedTaskIds.size,
-      recentMyTasks: [...myTasks]
-        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-        .slice(0, 6),
+      recentMyTasks: [...myTasks].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)).slice(0, 6),
     };
   }, [notifications, tasks, userId]);
 
-  const summaryCards = useMemo(
-    () => [
-      { title: "My Active Tasks", value: myMetrics.myActiveTasks.length, hint: "Tasks currently requiring your action", tone: "emerald" },
-      { title: "Stage Completions", value: myMetrics.myStageEntries.length, hint: "Total stage handoffs completed by you", tone: "cyan" },
-      { title: "Team Memberships", value: memberships.length, hint: "Teams where you currently contribute", tone: "amber" },
-      { title: "Unread Alerts", value: myMetrics.unreadNotifications, hint: "Inbox items waiting for your review", tone: "rose" },
-    ],
-    [memberships.length, myMetrics]
-  );
+  const summaryCards = useMemo(() => [
+    { title: "My Active Tasks", value: myMetrics.myActiveTasks.length, hint: "Tasks currently requiring your action", tone: "emerald" },
+    { title: "Stage Completions", value: myMetrics.myStageEntries.length, hint: "Total stage handoffs completed by you", tone: "cyan" },
+    { title: "Team Memberships", value: memberships.length, hint: "Teams where you currently contribute", tone: "amber" },
+    { title: "Unread Alerts", value: myMetrics.unreadNotifications, hint: "Inbox items waiting for your review", tone: "rose" },
+  ], [memberships.length, myMetrics]);
 
   if (loading) return <Loader label="Loading your dashboard..." />;
-
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-rose-400/40 bg-rose-500/15 p-4 text-sm text-rose-200">
-        {error}
-      </div>
-    );
-  }
+  if (error) return (
+    <div className="rounded-2xl border border-rose-400/40 bg-rose-500/15 p-4 text-sm text-rose-200">{error}</div>
+  );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-400/80">
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400/80">
               Personal Workspace
             </p>
-            <h1 className="mt-3 text-3xl font-bold text-white md:text-4xl">
-              Welcome back, {user?.name || "Teammate"}.
+            <h1 className="mt-2 text-2xl font-bold text-white sm:mt-3 sm:text-3xl md:text-4xl">
+              Welcome back, {user?.name?.split(" ")[0] || "Teammate"}.
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
-              This view is focused on your role, team memberships, stage contributions, and
-              tasks you currently own.
+            <p className="mt-2 max-w-2xl text-xs leading-6 text-slate-400 sm:text-sm">
+              Your role, team memberships, stage contributions, and tasks you currently own.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Pill>Role: {toTitle(user?.role)}</Pill>
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            <Pill>{toTitle(user?.role)}</Pill>
             <Pill>Org: {user?.orgCode || "--"}</Pill>
-            <Pill>Contributed Tasks: {myMetrics.contributedTaskCount}</Pill>
+            <Pill>Contributed: {myMetrics.contributedTaskCount}</Pill>
           </div>
         </div>
       </section>
 
       {/* Stat cards */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {summaryCards.map((card) => (
-          <StatCard key={card.title} {...card} />
-        ))}
+      <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {summaryCards.map((card) => <StatCard key={card.title} {...card} />)}
       </section>
 
-      {/* My Teams + Stage Contributions */}
-      <section className="grid gap-4 xl:grid-cols-2">
+      {/* Teams + Stage Contributions */}
+      <section className="grid gap-4 lg:grid-cols-2">
         <SectionCard title="My Teams" linkTo="/teams" linkLabel="Open Teams">
           {!memberships.length ? (
             <EmptyState>You are not assigned to any teams yet.</EmptyState>
           ) : (
-            <div className="space-y-3">
-              {memberships.map((membership) => (
-                <Row key={membership._id}>
+            <div className="space-y-2 sm:space-y-3">
+              {memberships.map((m) => (
+                <Row key={m._id}>
                   <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-white">{membership.groupId?.name || "Unnamed Team"}</p>
-                      <p className="text-xs text-slate-400">{membership.groupId?.code || "--"}</p>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-white">{m.groupId?.name || "Unnamed Team"}</p>
+                      <p className="text-xs text-slate-400">{m.groupId?.code || "--"}</p>
                     </div>
-                    <Pill>{toTitle(membership.roleInGroup)}</Pill>
+                    <Pill>{toTitle(m.roleInGroup)}</Pill>
                   </div>
                 </Row>
               ))}
@@ -229,16 +198,16 @@ export default function Dashboard() {
           )}
         </SectionCard>
 
-        <SectionCard title="Stage Contribution Breakdown">
+        <SectionCard title="Stage Contributions">
           {!myMetrics.stageBreakdown.length ? (
-            <EmptyState>No completed stage contributions from your account yet.</EmptyState>
+            <EmptyState>No completed stage contributions yet.</EmptyState>
           ) : (
-            <div className="space-y-3">
-              {myMetrics.stageBreakdown.slice(0, 6).map((entry) => (
-                <Row key={entry.stageName}>
+            <div className="space-y-2 sm:space-y-3">
+              {myMetrics.stageBreakdown.slice(0, 6).map((e) => (
+                <Row key={e.stageName}>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-white">{entry.stageName}</p>
-                    <span className="text-sm font-semibold text-emerald-400">{entry.count}</span>
+                    <p className="text-sm text-white">{e.stageName}</p>
+                    <span className="text-sm font-semibold text-emerald-400">{e.count}</span>
                   </div>
                 </Row>
               ))}
@@ -252,15 +221,15 @@ export default function Dashboard() {
         {!myMetrics.recentMyTasks.length ? (
           <EmptyState>You do not have assigned tasks yet.</EmptyState>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {myMetrics.recentMyTasks.map((task) => (
               <Row key={task._id}>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="font-medium text-white">{task.title}</p>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-white">{task.title}</p>
                   <Pill>{toTitle(task.status)}</Pill>
                 </div>
-                <p className="mt-2 text-xs text-slate-400">
-                  Stage: {task.stageName || "Unstaged"} | Updated: {formatDateTime(task.updatedAt)}
+                <p className="mt-1.5 text-xs text-slate-400">
+                  Stage: {task.stageName || "Unstaged"} · {formatDateTime(task.updatedAt)}
                 </p>
               </Row>
             ))}
@@ -273,21 +242,17 @@ export default function Dashboard() {
         {!notifications.length ? (
           <EmptyState>No recent notifications found.</EmptyState>
         ) : (
-          <div className="space-y-3">
-            {notifications.map((notification) => (
-              <Row key={notification._id}>
+          <div className="space-y-2 sm:space-y-3">
+            {notifications.map((n) => (
+              <Row key={n._id}>
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm text-white">{notification.message}</p>
-                    <p className="mt-2 text-xs uppercase tracking-wide text-slate-500">
-                      {notification.type}
-                    </p>
+                  <div className="min-w-0">
+                    <p className="text-sm text-white">{n.message}</p>
+                    <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">{n.type}</p>
                   </div>
-                  <Pill tone={notification.isRead ? "read" : "unread"}>
-                    {notification.isRead ? "Read" : "Unread"}
-                  </Pill>
+                  <Pill tone={n.isRead ? "read" : "unread"}>{n.isRead ? "Read" : "New"}</Pill>
                 </div>
-                <p className="mt-3 text-xs text-slate-500">{formatDateTime(notification.createdAt)}</p>
+                <p className="mt-2 text-xs text-slate-500">{formatDateTime(n.createdAt)}</p>
               </Row>
             ))}
           </div>

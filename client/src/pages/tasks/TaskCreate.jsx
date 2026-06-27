@@ -146,9 +146,9 @@ export default function TaskCreate() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-8">
       <div className="rounded-[32px] border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.14),transparent_28%),radial-gradient(circle_at_right,rgba(56,189,248,0.12),transparent_22%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,24,39,0.84))] p-6 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
-        <h1 className="text-3xl font-bold text-white">Create Task</h1>
+        <h1 className="text-2xl font-bold text-white sm:text-3xl">Create Task</h1>
         <p className="text-sm text-slate-300">
           Choose the right creation path so new users understand whether work should
           follow a workflow or be handled as standalone work.

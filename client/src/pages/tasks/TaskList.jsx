@@ -66,7 +66,7 @@ export default function TaskList() {
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200/80">
               Execution Board
             </p>
-            <h1 className="mt-2 text-3xl font-bold text-white">Task Operations</h1>
+            <h1 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Task Operations</h1>
             <p className="text-sm text-slate-300">
               Track work, understand who owns it, and quickly move it forward.
             </p>

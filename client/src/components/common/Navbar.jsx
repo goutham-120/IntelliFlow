@@ -191,7 +191,7 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }) {
 
           {openProfile && (
             <div
-              className={`absolute right-0 top-full z-[120] mt-3 w-72 overflow-hidden rounded-[24px] border p-4 shadow-[0_24px_60px_rgba(15,23,42,0.18)] ${
+              className={`absolute right-0 top-full z-[120] mt-3 w-[calc(100vw-2rem)] max-w-xs sm:w-72 overflow-hidden rounded-[24px] border p-4 shadow-[0_24px_60px_rgba(15,23,42,0.18)] ${
                 isLightTheme
                   ? "border-slate-700 bg-slate-950/95"
                   : "border-slate-700 bg-slate-900/95"

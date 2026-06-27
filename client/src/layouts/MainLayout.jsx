@@ -18,11 +18,12 @@ export default function MainLayout() {
       <Sidebar sidebarOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col md:pl-[260px]">
+        {/* Navbar always visible on mobile */}
         <div className="md:hidden">
           <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         </div>
 
-        <main className="relative z-0 flex-1 px-4 pb-8 pt-3 md:px-6 md:pb-10 md:pt-6 xl:px-8">
+        <main className="relative z-0 flex-1 px-3 pb-8 pt-3 sm:px-4 md:px-6 md:pb-10 md:pt-6 xl:px-8">
           <div className="mx-auto w-full max-w-[1600px]">
             <Outlet />
           </div>

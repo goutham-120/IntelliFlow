@@ -111,7 +111,7 @@ function UsersTable({ users, currentUserId, isAdmin, onToggleStatus, togglingId 
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
       <table className="w-full min-w-[640px] text-left text-slate-200">
         <thead className="bg-slate-900/90 text-sm text-slate-400">
           <tr>

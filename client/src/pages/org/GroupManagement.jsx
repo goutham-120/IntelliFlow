@@ -382,7 +382,7 @@ export default function GroupManagement() {
                 ) : memberships.length === 0 ? (
                   <p className="p-4 text-sm text-slate-400">No members in this team yet.</p>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
                     <table className="w-full min-w-[700px] text-left text-sm text-slate-300">
                       <thead className="bg-slate-900/90 text-xs uppercase tracking-wide text-slate-400">
                         <tr>

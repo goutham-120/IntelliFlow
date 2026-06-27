@@ -131,17 +131,17 @@ export default function WorkflowList() {
   }, [location.pathname, location.state, navigate]);
 
   return (
-    <div className="space-y-4 text-slate-200">
+    <div className="space-y-3 text-slate-200 sm:space-y-4">
       {/* Header */}
       <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Workflows</h1>
+          <h1 className="text-2xl font-bold text-white sm:text-3xl">Workflows</h1>
           <p className="mt-2 text-sm text-slate-400">
             Create, manage and monitor your organizational workflows
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex h-11 min-w-[250px] items-center gap-3 rounded-lg border border-slate-800 bg-[#081421] px-4 text-sm text-slate-400">
+          <label className="flex h-11 w-full sm:min-w-[200px] items-center gap-3 rounded-lg border border-slate-800 bg-[#081421] px-4 text-sm text-slate-400">
             <span className="text-xs uppercase tracking-wider">Search</span>
             <input
               value={query}
@@ -225,7 +225,7 @@ function StatCard({ color, label, value }) {
       </div>
       <div>
         <p className="text-sm text-slate-400">{label}</p>
-        <p className="mt-2 text-3xl font-bold text-white">{value}</p>
+        <p className="mt-2 text-2xl font-bold text-white sm:text-3xl">{value}</p>
       </div>
     </article>
   );
