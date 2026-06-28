@@ -226,7 +226,7 @@ export default function GroupManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[2rem] border border-slate-700/80 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.14),transparent_28%),radial-gradient(circle_at_right,rgba(56,189,248,0.12),transparent_20%),linear-gradient(135deg,rgba(15,23,42,0.95),rgba(17,24,39,0.84))] p-6 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
+      <div className="rounded-2xl border border-slate-700/80 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.14),transparent_28%),radial-gradient(circle_at_right,rgba(56,189,248,0.12),transparent_20%),linear-gradient(135deg,rgba(15,23,42,0.95),rgba(17,24,39,0.84))] p-4 sm:p-6 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-teal-200/80">
@@ -276,7 +276,7 @@ export default function GroupManagement() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <section className="rounded-[2rem] border border-slate-700/80 bg-slate-950/72 p-4 shadow-[0_18px_45px_rgba(2,6,23,0.24)]">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-['Baloo_2'] text-lg font-semibold text-white">Teams</h2>

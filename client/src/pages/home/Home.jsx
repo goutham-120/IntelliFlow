@@ -82,7 +82,7 @@ export default function Home() {
           background: "rgba(255,255,255,0.92)",
           backdropFilter: "blur(12px)",
           borderBottom: "1px solid var(--border)",
-          padding: "0 48px",
+          padding: "0 clamp(16px, 4vw, 48px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -93,7 +93,7 @@ export default function Home() {
           <img
             src={logo}
             alt="IntelliFlow logo"
-            style={{ width: 145, height: 45, borderRadius: 6 }}
+            style={{ width: "clamp(90px, 28vw, 145px)", height: "auto", borderRadius: 6 }}
           />
           {/* <span
             style={{
@@ -510,7 +510,7 @@ export default function Home() {
           <img
             src={logo}
             alt="IntelliFlow logo"
-            style={{ width: 145, height: 45, borderRadius: 6 }}
+            style={{ width: "clamp(90px, 28vw, 145px)", height: "auto", borderRadius: 6 }}
           />
         </div>
         <p style={{ fontSize: "0.78rem", color: "var(--muted)" }}>

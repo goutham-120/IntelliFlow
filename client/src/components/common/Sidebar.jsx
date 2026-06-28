@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
+import logo from "../../assets/logo.png";
 
 const icons = {
   Dashboard: "M4 10.5 12 4l8 6.5V20h-5v-6H9v6H4v-9.5Z",
@@ -61,13 +62,8 @@ export default function Sidebar({ sidebarOpen, onClose }) {
         }`}
       >
         {/* Logo — fixed, never shrinks */}
-        <div className="mb-6 flex shrink-0 items-center gap-3 px-5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500 text-lg font-black text-white shadow-[0_12px_28px_rgba(16,185,129,0.25)]">
-            I
-          </div>
-          <h1 className="text-xl font-bold tracking-tight text-white">
-            Intelli<span className="text-emerald-400">Flow</span>
-          </h1>
+        <div className="mb-6 flex shrink-0 items-center px-3">
+          <img src={logo} alt="IntelliFlow" className="h-8 w-auto rounded-lg bg-white p-1" />
         </div>
 
         {/* Scrollable nav area — takes remaining space, scrolls if needed */}
