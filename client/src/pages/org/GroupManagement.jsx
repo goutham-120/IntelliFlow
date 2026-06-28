@@ -333,7 +333,7 @@ export default function GroupManagement() {
           )}
         </section>
 
-        <section className="rounded-[2rem] border border-slate-700/80 bg-slate-950/72 p-5 shadow-[0_18px_45px_rgba(2,6,23,0.24)]">
+        <section className="overflow-hidden rounded-[2rem] border border-slate-700/80 bg-slate-950/72 p-5 shadow-[0_18px_45px_rgba(2,6,23,0.24)]">
           {!selectedGroup ? (
             <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/70 p-8 text-center text-slate-400">
               Select a team on the left to review its members, edit its details, and
@@ -383,7 +383,7 @@ export default function GroupManagement() {
                   <p className="p-4 text-sm text-slate-400">No members in this team yet.</p>
                 ) : (
                   <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-                    <table className="w-full min-w-[700px] text-left text-sm text-slate-300">
+                    <table className="w-full min-w-[520px] text-left text-sm text-slate-300">
                       <thead className="bg-slate-900/90 text-xs uppercase tracking-wide text-slate-400">
                         <tr>
                           <th className="px-4 py-3">Name</th>
