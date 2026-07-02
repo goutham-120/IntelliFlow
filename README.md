@@ -50,7 +50,7 @@ The application supports organization registration, secure authentication, admin
 | Frontend | React 19, Vite, React Router, Axios, Tailwind CSS |
 | Backend | Node.js, Express 5, REST APIs |
 | Database | MongoDB, Mongoose |
-| Authentication | JWT, bcryptjs |
+| Authentication | Google Identity Services, JWT, bcryptjs |
 | Tooling | ESLint, PostCSS, Nodemon |
 | Deployment | Vercel-frontend, Render-backend, database-mongodb atlas|
 
@@ -122,15 +122,17 @@ Create a `.env` file inside `server/`:
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
+GOOGLE_CLIENT_ID=your_google_oauth_web_client_id
 ```
 
 Create a `.env` file inside `client/`:
 
 ```env
 VITE_API_URL=http://localhost:5000/api
+VITE_GOOGLE_CLIENT_ID=your_google_oauth_web_client_id
 ```
 
-For production, set `VITE_API_URL` to the deployed backend API URL.
+Use the same Google OAuth Web Client ID on the frontend and backend. In Google Cloud Console, add your local and deployed frontend origins, such as `http://localhost:5173`, under Authorized JavaScript origins. For production, set `VITE_API_URL` to the deployed backend API URL.
 
 ### 4. Run the application locally
 
@@ -191,8 +193,8 @@ The frontend is deployed here:
 
 When deploying the full application, configure these environment variables in the hosting dashboards:
 
-- `VITE_API_URL` for the frontend
-- `MONGO_URI`, `JWT_SECRET`, and `PORT` for the backend
+- `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID` for the frontend
+- `MONGO_URI`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, and `PORT` for the backend
 
 ## Highlights
 

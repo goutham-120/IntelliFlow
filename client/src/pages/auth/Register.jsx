@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
 import useAuth from "../../hooks/useAuth";
-import { registerOrganization } from "../../services/authService";
+import { registerOrganizationWithGoogle } from "../../services/authService";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -11,8 +12,6 @@ export default function Register() {
   const [orgName, setOrgName] = useState("");
   const [orgCode, setOrgCode] = useState("");
   const [adminName, setAdminName] = useState("");
-  const [adminEmail, setAdminEmail] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,18 +24,22 @@ export default function Register() {
     }
   };
 
-  const handleRegisterSubmit = async (e) => {
-    e.preventDefault();
+  const handleGoogleRegister = async (credential) => {
     setError("");
+
+    if (!adminName.trim()) {
+      setError("Enter the admin name before continuing with Google.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const data = await registerOrganization({
+      const data = await registerOrganizationWithGoogle({
         orgName,
         orgCode,
         adminName,
-        adminEmail,
-        adminPassword,
+        credential,
       });
 
       login({ token: data.token, user: data.user });
@@ -265,7 +268,7 @@ export default function Register() {
           )}
 
           {step === 2 && (
-            <form onSubmit={handleRegisterSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               <div
                 style={{
                   padding: "12px 16px",
@@ -307,41 +310,30 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="rf-label">Admin email</label>
-                <input
-                  type="email"
-                  value={adminEmail}
-                  onChange={(e) => setAdminEmail(e.target.value)}
-                  placeholder="admin@example.com"
-                  className="rf-input"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="rf-label">Password</label>
-                <input
-                  type="password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  placeholder="Create a strong password"
-                  className="rf-input"
-                  required
-                />
+                <label className="rf-label">Verified Google account</label>
+                <div style={{ marginTop: 8 }}>
+                  <GoogleSignInButton
+                    disabled={loading || !adminName.trim()}
+                    onCredential={handleGoogleRegister}
+                    text="signup_with"
+                  />
+                </div>
                 <p style={{ marginTop: 6, fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.5 }}>
-                  This will be the first admin account and it opens directly into the dashboard.
+                  Google provides and verifies the admin email for this workspace.
                 </p>
               </div>
 
-              <button type="submit" className="rf-btn" disabled={loading}>
-                {loading ? "Creating..." : "Create organization"}
-              </button>
+              {loading && (
+                <button type="button" className="rf-btn" disabled>
+                  Creating...
+                </button>
+              )}
 
               <p style={{ textAlign: "center", fontSize: "0.84rem", color: "var(--muted)" }}>
                 Want to login instead?{" "}
                 <Link to="/login" className="rf-link">Login</Link>
               </p>
-            </form>
+            </div>
           )}
         </div>
       </div>

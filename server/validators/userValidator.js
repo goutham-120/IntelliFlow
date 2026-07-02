@@ -10,7 +10,6 @@ export const validateCreateUser = (req, res, next) => {
   if (
     !isNonEmptyString(name) ||
     !isNonEmptyString(email) ||
-    !isNonEmptyString(password) ||
     !isNonEmptyString(role)
   ) {
     return res.status(400).json({ message: "All fields are required" });
@@ -28,7 +27,11 @@ export const validateCreateUser = (req, res, next) => {
 
   req.body.name = name.trim();
   req.body.email = email.trim().toLowerCase();
-  req.body.password = password.trim();
+  if (isNonEmptyString(password)) {
+    req.body.password = password.trim();
+  } else {
+    delete req.body.password;
+  }
   req.body.role = normalizedRole;
 
   next();

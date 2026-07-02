@@ -25,6 +25,26 @@ export const validateRegisterOrg = (req, res, next) => {
   next();
 };
 
+export const validateGoogleRegisterOrg = (req, res, next) => {
+  const { orgName, orgCode, adminName, credential } = req.body;
+
+  if (
+    !isNonEmptyString(orgName) ||
+    !isNonEmptyString(orgCode) ||
+    !isNonEmptyString(adminName) ||
+    !isNonEmptyString(credential)
+  ) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  req.body.orgName = orgName.trim();
+  req.body.orgCode = orgCode.trim().toUpperCase();
+  req.body.adminName = adminName.trim();
+  req.body.credential = credential.trim();
+
+  next();
+};
+
 export const validateVerifyOrg = (req, res, next) => {
   const { orgCode } = req.body;
 
@@ -58,6 +78,29 @@ export const validateLoginUser = (req, res, next) => {
   req.body.orgCode = orgCode.trim().toUpperCase();
   req.body.email = email.trim().toLowerCase();
   req.body.role = normalizedRole;
+
+  next();
+};
+
+export const validateGoogleLoginUser = (req, res, next) => {
+  const { orgCode, credential, role } = req.body;
+
+  if (
+    !isNonEmptyString(orgCode) ||
+    !isNonEmptyString(credential) ||
+    !isNonEmptyString(role)
+  ) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  const normalizedInputRole = role.trim().toLowerCase();
+  if (!ACCEPTED_ROLE_INPUTS.includes(normalizedInputRole)) {
+    return res.status(400).json({ message: "Invalid role" });
+  }
+
+  req.body.orgCode = orgCode.trim().toUpperCase();
+  req.body.credential = credential.trim();
+  req.body.role = normalizeSystemRole(normalizedInputRole);
 
   next();
 };

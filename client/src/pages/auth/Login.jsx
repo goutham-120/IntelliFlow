@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
 import useAuth from "../../hooks/useAuth";
-import { verifyOrganization, loginUser } from "../../services/authService";
+import { verifyOrganization, loginUserWithGoogle } from "../../services/authService";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -10,8 +11,6 @@ export default function Login() {
   const [step, setStep] = useState(1);
   const [orgName, setOrgName] = useState("");
   const [orgCode, setOrgCode] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -32,12 +31,17 @@ export default function Login() {
     }
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleGoogleLogin = async (credential) => {
     setError("");
+
+    if (!role) {
+      setError("Select a role before continuing with Google.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const data = await loginUser({ orgCode, email, password, role });
+      const data = await loginUserWithGoogle({ orgCode, credential, role });
       login({ token: data.token, user: data.user });
       navigate("/dashboard");
     } catch (err) {
@@ -252,7 +256,7 @@ export default function Login() {
           )}
 
           {step === 2 && (
-            <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               <div
                 style={{
                   padding: "12px 16px",
@@ -282,16 +286,6 @@ export default function Login() {
               </div>
 
               <div>
-                <label className="lf-label">Email</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className="lf-input" required />
-              </div>
-
-              <div>
-                <label className="lf-label">Password</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="lf-input" required />
-              </div>
-
-              <div>
                 <label className="lf-label">Sign in as</label>
                 <select value={role} onChange={(e) => setRole(e.target.value)} className="lf-input" required style={{ marginTop: 6, cursor: "pointer" }}>
                   <option value="">Select role</option>
@@ -300,15 +294,31 @@ export default function Login() {
                 </select>
               </div>
 
-              <button type="submit" className="lf-btn" disabled={loading}>
-                {loading ? "Signing in..." : "Sign in"}
-              </button>
+              <div>
+                <label className="lf-label">Verified Google account</label>
+                <div style={{ marginTop: 8 }}>
+                  <GoogleSignInButton
+                    disabled={loading || !role}
+                    onCredential={handleGoogleLogin}
+                    text="signin_with"
+                  />
+                </div>
+                <p style={{ marginTop: 8, fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.5 }}>
+                  Use the Google account that matches your workspace email.
+                </p>
+              </div>
+
+              {loading && (
+                <button type="button" className="lf-btn" disabled>
+                  Signing in...
+                </button>
+              )}
 
               <p style={{ textAlign: "center", fontSize: "0.84rem", color: "var(--muted)" }}>
                 No account?{" "}
                 <Link to="/register" className="lf-link">Register</Link>
               </p>
-            </form>
+            </div>
           )}
         </div>
       </div>

@@ -110,11 +110,11 @@ function ChartsRow({ tasksCreatedSeries, tasksCompletedSeries }) {
 // ─── Donut Chart ──────────────────────────────────────────────────────────────
 function DonutChart({ segments, total }) {
   const r=50,cx=70,cy=70,sw=18,circ=2*Math.PI*r;
-  let offset=0;
-  const slices=segments.map(s=>{
-    const dash=(s.pct/100)*circ,cur=offset; offset+=dash;
-    return {...s,dash,gap:circ-dash,offset:cur};
-  });
+  const slices=segments.reduce((acc,s)=>{
+    const offset=acc.offset;
+    const dash=(s.pct/100)*circ;
+    return { offset:offset+dash, items:[...acc.items,{...s,dash,gap:circ-dash,offset}] };
+  },{ offset:0, items:[] }).items;
   return (
     <svg width={cx*2} height={cy*2} viewBox={`0 0 ${cx*2} ${cy*2}`} className="shrink-0">
       <circle cx={cx} cy={cy} r={r} fill="none" stroke="#1e293b" strokeWidth={sw}/>

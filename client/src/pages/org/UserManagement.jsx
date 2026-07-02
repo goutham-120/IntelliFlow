@@ -8,7 +8,7 @@ import {
   setUserActiveStatus,
 } from "../../services/userService";
 
-const EMPTY_FORM = { name: "", email: "", password: "", role: "user" };
+const EMPTY_FORM = { name: "", email: "", role: "user" };
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 function StatCard({ label, value, accent }) {
@@ -66,14 +66,6 @@ function CreateUserForm({ formData, onChange, onCancel, onSubmit }) {
         required
         value={formData.email}
         onChange={(e) => onChange({ ...formData, email: e.target.value })}
-        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        required
-        value={formData.password}
-        onChange={(e) => onChange({ ...formData, password: e.target.value })}
         className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
       />
       <select
@@ -240,7 +232,7 @@ export default function UserManagement() {
         <div>
           <h1 className="text-2xl font-bold text-white">User Management</h1>
           <p className="mt-1 text-sm text-slate-400">
-            Add workspace members, manage roles, and control account access.
+            Add workspace members by verified Google email, manage roles, and control access.
           </p>
         </div>
         {isAdmin && (
@@ -293,7 +285,7 @@ export default function UserManagement() {
         open={formOpen}
         onClose={() => setFormOpen(false)}
         title="Create New Account"
-        description="Admins can manage reporting and setup. Users can join teams and receive task assignments."
+        description="Members sign in with the Google account that matches the email you add here."
         size="sm"
       >
         <CreateUserForm

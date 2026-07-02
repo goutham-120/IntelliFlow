@@ -23,7 +23,22 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: true,
+    },
+
+    authProvider: {
+      type: String,
+      enum: ["password", "google"],
+      default: "password",
+    },
+
+    googleSubject: {
+      type: String,
+      trim: true,
+    },
+
+    emailVerified: {
+      type: Boolean,
+      default: false,
     },
 
     role: {
@@ -42,6 +57,13 @@ const userSchema = new mongoose.Schema(
 
 // Prevent duplicate emails inside same organization
 userSchema.index({ organizationId: 1, email: 1 }, { unique: true });
+userSchema.index(
+  { organizationId: 1, googleSubject: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { googleSubject: { $type: "string" } },
+  }
+);
 
 const User = mongoose.model("User", userSchema);
 

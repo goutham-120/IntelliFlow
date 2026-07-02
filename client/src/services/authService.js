@@ -6,6 +6,11 @@ export const registerOrganization = async (data) => {
   return response.data;
 };
 
+export const registerOrganizationWithGoogle = async (data) => {
+  const response = await api.post("/auth/register-org/google", data);
+  return response.data;
+};
+
 // Verify Organization (Login Step 1)
 export const verifyOrganization = async (orgCode) => {
   const response = await api.post("/auth/verify-org", { orgCode });
@@ -15,5 +20,10 @@ export const verifyOrganization = async (orgCode) => {
 // Login User
 export const loginUser = async (data) => {
   const response = await api.post("/auth/login", data);
+  return response.data;
+};
+
+export const loginUserWithGoogle = async (data) => {
+  const response = await api.post("/auth/login/google", data);
   return response.data;
 };

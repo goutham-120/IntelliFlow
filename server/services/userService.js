@@ -24,8 +24,9 @@ export const createUserService = async ({
     throw createServiceError(400, "User already exists in this organization");
   }
 
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
+  const hashedPassword = password
+    ? await bcrypt.hash(password, await bcrypt.genSalt(10))
+    : undefined;
 
   try {
     const newUser = await User.create({
@@ -33,6 +34,7 @@ export const createUserService = async ({
       name,
       email,
       password: hashedPassword,
+      authProvider: hashedPassword ? "password" : "google",
       role: normalizedRole,
     });
 
