@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
 import useAuth from "../../hooks/useAuth";
 import { verifyOrganization, loginUserWithGoogle } from "../../services/authService";
+import logo from "../home/image.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -168,27 +169,11 @@ export default function Login() {
         <div className="login-card">
           <div style={{ textAlign: "center", marginBottom: 28 }}>
             {/* <div className="tag" style={{ marginBottom: 16 }}>Secure sign in</div> */}
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 9, marginBottom: 16 }}>
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  background: "var(--green)",
-                  borderRadius: 7,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  fontWeight: 700,
-                  fontSize: "0.95rem",
-                }}
-              >
-                I
-              </div>
-              <span style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700, fontSize: "1.2rem", letterSpacing: "0.01em" }}>
-                Intelli<span style={{ color: "var(--green)" }}>Flow</span>
-              </span>
-            </div>
+            <img
+              src={logo}
+              alt="IntelliFlow logo"
+              style={{ width: "clamp(105px, 34vw, 150px)", height: "auto", borderRadius: 6, marginBottom: 16 }}
+            />
             <h1
               style={{
                 fontFamily: "'Baloo 2', sans-serif",
