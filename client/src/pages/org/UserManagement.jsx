@@ -5,10 +5,12 @@ import useAuth from "../../hooks/useAuth";
 import {
   fetchUsers,
   createUser,
+  deleteUser,
   setUserActiveStatus,
+  updateUser,
 } from "../../services/userService";
 
-const EMPTY_FORM = { name: "", email: "", role: "user" };
+const EMPTY_FORM = { name: "", email: "", password: "", role: "user", isActive: true };
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 function StatCard({ label, value, accent }) {
@@ -49,7 +51,7 @@ function RoleBadge({ role }) {
 }
 
 // ─── Create user form ──────────────────────────────────────────────────────────
-function CreateUserForm({ formData, onChange, onCancel, onSubmit }) {
+function UserForm({ formData, mode = "create", onChange, onCancel, onSubmit }) {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <input
@@ -68,6 +70,13 @@ function CreateUserForm({ formData, onChange, onCancel, onSubmit }) {
         onChange={(e) => onChange({ ...formData, email: e.target.value })}
         className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
       />
+      <input
+        type="password"
+        placeholder={mode === "edit" ? "New password (leave blank to keep current)" : "Password (optional for Google-only user)"}
+        value={formData.password}
+        onChange={(e) => onChange({ ...formData, password: e.target.value })}
+        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+      />
       <select
         value={formData.role}
         onChange={(e) => onChange({ ...formData, role: e.target.value })}
@@ -76,6 +85,17 @@ function CreateUserForm({ formData, onChange, onCancel, onSubmit }) {
         <option value="user">User</option>
         <option value="admin">Admin</option>
       </select>
+      {mode === "edit" && (
+        <label className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-300">
+          <input
+            type="checkbox"
+            checked={formData.isActive}
+            onChange={(e) => onChange({ ...formData, isActive: e.target.checked })}
+            className="h-4 w-4 accent-emerald-500"
+          />
+          Active account
+        </label>
+      )}
 
       <div className="flex justify-end gap-3 pt-2">
         <button
@@ -89,7 +109,7 @@ function CreateUserForm({ formData, onChange, onCancel, onSubmit }) {
           type="submit"
           className="rounded-xl bg-emerald-500 px-4 py-2 font-semibold text-slate-950"
         >
-          Create
+          {mode === "edit" ? "Save Changes" : "Create"}
         </button>
       </div>
     </form>
@@ -97,7 +117,16 @@ function CreateUserForm({ formData, onChange, onCancel, onSubmit }) {
 }
 
 // ─── Users table ────────────────────────────────────────────────────────────────
-function UsersTable({ users, currentUserId, isAdmin, onToggleStatus, togglingId }) {
+function UsersTable({
+  users,
+  currentUserId,
+  isAdmin,
+  onDelete,
+  onEdit,
+  onToggleStatus,
+  deletingId,
+  togglingId,
+}) {
   if (!users.length) {
     return <p className="p-6 text-sm text-slate-400">No users found.</p>;
   }
@@ -126,6 +155,13 @@ function UsersTable({ users, currentUserId, isAdmin, onToggleStatus, togglingId 
                 <td className="p-4"><StatusBadge active={active} /></td>
                 {isAdmin && (
                   <td className="p-4 text-right">
+                    <div className="flex flex-wrap justify-end gap-2">
+                    <button
+                      onClick={() => onEdit(user)}
+                      className="rounded-lg border border-sky-400/40 px-3 py-1.5 text-xs font-medium text-sky-300 transition hover:bg-sky-500/10"
+                    >
+                      Edit
+                    </button>
                     <button
                       onClick={() => onToggleStatus(user, !active)}
                       disabled={isSelf || togglingId === user._id}
@@ -142,6 +178,15 @@ function UsersTable({ users, currentUserId, isAdmin, onToggleStatus, togglingId 
                           ? "Deactivate"
                           : "Activate"}
                     </button>
+                    <button
+                      onClick={() => onDelete(user)}
+                      disabled={isSelf || deletingId === user._id}
+                      title={isSelf ? "You can't delete your own account" : ""}
+                      className="rounded-lg border border-rose-400/40 px-3 py-1.5 text-xs font-medium text-rose-300 transition hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {deletingId === user._id ? "Deleting..." : "Delete"}
+                    </button>
+                    </div>
                   </td>
                 )}
               </tr>
@@ -165,6 +210,10 @@ export default function UserManagement() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingUserId, setEditingUserId] = useState("");
+  const [editFormData, setEditFormData] = useState(EMPTY_FORM);
+  const [deletingId, setDeletingId] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
 
   const loadUsers = async () => {
@@ -198,13 +247,84 @@ export default function UserManagement() {
     setError("");
     setSuccess("");
     try {
-      await createUser(formData);
+      const payload = { ...formData };
+      if (!payload.password.trim()) delete payload.password;
+      delete payload.isActive;
+      await createUser(payload);
       setFormOpen(false);
       setFormData(EMPTY_FORM);
       setSuccess("User created successfully");
       loadUsers();
     } catch (err) {
       setError(err.response?.data?.message || "User creation failed");
+    }
+  };
+
+  const openEditModal = (user) => {
+    setEditingUserId(user._id);
+    setEditFormData({
+      name: user.name || "",
+      email: user.email || "",
+      password: "",
+      role: user.role || "user",
+      isActive: user.isActive !== false,
+    });
+    setEditOpen(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    const payload = {
+      name: editFormData.name,
+      email: editFormData.email,
+      role: editFormData.role,
+      isActive: editFormData.isActive,
+    };
+    if (editFormData.password.trim()) {
+      payload.password = editFormData.password;
+    }
+
+    try {
+      const result = await updateUser(editingUserId, payload);
+      const updatedUser = result.user;
+      setUsers((prev) =>
+        prev.map((u) =>
+          u._id === editingUserId
+            ? {
+                ...u,
+                ...updatedUser,
+                _id: updatedUser._id || updatedUser.id || editingUserId,
+              }
+            : u
+        )
+      );
+      setEditOpen(false);
+      setEditingUserId("");
+      setEditFormData(EMPTY_FORM);
+      setSuccess("User updated successfully");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update user");
+    }
+  };
+
+  const handleDeleteUser = async (user) => {
+    const shouldDelete = window.confirm(`Delete ${user.name}? This removes their account from this organization.`);
+    if (!shouldDelete) return;
+
+    setError("");
+    setSuccess("");
+    setDeletingId(user._id);
+    try {
+      await deleteUser(user._id);
+      setUsers((prev) => prev.filter((item) => item._id !== user._id));
+      setSuccess("User deleted successfully");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to delete user");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -272,9 +392,12 @@ export default function UserManagement() {
         ) : (
           <UsersTable
             users={users}
-            currentUserId={currentUser?._id}
+            currentUserId={currentUser?._id || currentUser?.id}
             isAdmin={isAdmin}
+            onDelete={handleDeleteUser}
+            onEdit={openEditModal}
             onToggleStatus={handleToggleStatus}
+            deletingId={deletingId}
             togglingId={togglingId}
           />
         )}
@@ -285,14 +408,31 @@ export default function UserManagement() {
         open={formOpen}
         onClose={() => setFormOpen(false)}
         title="Create New Account"
-        description="Members sign in with the Google account that matches the email you add here."
+        description="Add a password for email login, or leave it blank for Google-only access."
         size="sm"
       >
-        <CreateUserForm
+        <UserForm
           formData={formData}
+          mode="create"
           onChange={setFormData}
           onCancel={() => setFormOpen(false)}
           onSubmit={handleCreateSubmit}
+        />
+      </Modal>
+
+      <Modal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit User"
+        description="Update account details, role, password, or active status."
+        size="sm"
+      >
+        <UserForm
+          formData={editFormData}
+          mode="edit"
+          onChange={setEditFormData}
+          onCancel={() => setEditOpen(false)}
+          onSubmit={handleEditSubmit}
         />
       </Modal>
     </div>

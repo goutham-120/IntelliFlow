@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
 import useAuth from "../../hooks/useAuth";
-import { registerOrganizationWithGoogle } from "../../services/authService";
+import { registerOrganization, registerOrganizationWithGoogle } from "../../services/authService";
 import logo from "../home/image.png";
 
 export default function Register() {
@@ -13,6 +13,8 @@ export default function Register() {
   const [orgName, setOrgName] = useState("");
   const [orgCode, setOrgCode] = useState("");
   const [adminName, setAdminName] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -41,6 +43,35 @@ export default function Register() {
         orgCode,
         adminName,
         credential,
+      });
+
+      login({ token: data.token, user: data.user });
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordRegister = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!adminName.trim()) {
+      setError("Enter the admin name before creating the workspace.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const data = await registerOrganization({
+        orgName,
+        orgCode,
+        adminName,
+        adminEmail,
+        adminPassword,
       });
 
       login({ token: data.token, user: data.user });
@@ -294,8 +325,42 @@ export default function Register() {
                 />
               </div>
 
+              <form onSubmit={handlePasswordRegister} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div>
+                  <label className="rf-label">Admin email</label>
+                  <input
+                    type="email"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    placeholder="admin@example.com"
+                    className="rf-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="rf-label">Admin password</label>
+                  <input
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    placeholder="Create a password"
+                    className="rf-input"
+                    required
+                  />
+                </div>
+                <button type="submit" className="rf-btn" disabled={loading}>
+                  {loading ? "Creating..." : "Create with Email"}
+                </button>
+              </form>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                <span style={{ fontSize: "0.76rem", color: "var(--muted)", fontWeight: 600 }}>OR</span>
+                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+              </div>
+
               <div>
-                <label className="rf-label">Verified Google account</label>
+                <label className="rf-label">Google account</label>
                 <div style={{ marginTop: 8 }}>
                   <GoogleSignInButton
                     disabled={loading || !adminName.trim()}
@@ -303,16 +368,7 @@ export default function Register() {
                     text="signup_with"
                   />
                 </div>
-                <p style={{ marginTop: 6, fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.5 }}>
-                  Google provides and verifies the admin email for this workspace.
-                </p>
               </div>
-
-              {loading && (
-                <button type="button" className="rf-btn" disabled>
-                  Creating...
-                </button>
-              )}
 
               <p style={{ textAlign: "center", fontSize: "0.84rem", color: "var(--muted)" }}>
                 Want to login instead?{" "}

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
 import useAuth from "../../hooks/useAuth";
-import { verifyOrganization, loginUserWithGoogle } from "../../services/authService";
+import { verifyOrganization, loginUser, loginUserWithGoogle } from "../../services/authService";
 import logo from "../home/image.png";
 
 export default function Login() {
@@ -13,6 +13,8 @@ export default function Login() {
   const [orgName, setOrgName] = useState("");
   const [orgCode, setOrgCode] = useState("");
   const [role, setRole] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -43,6 +45,27 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await loginUserWithGoogle({ orgCode, credential, role });
+      login({ token: data.token, user: data.user });
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!role) {
+      setError("Select a role before signing in.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = await loginUser({ orgCode, email, password, role });
       login({ token: data.token, user: data.user });
       navigate("/dashboard");
     } catch (err) {
@@ -279,8 +302,42 @@ export default function Login() {
                 </select>
               </div>
 
+              <form onSubmit={handlePasswordLogin} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div>
+                  <label className="lf-label">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="lf-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="lf-label">Password</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="lf-input"
+                    required
+                  />
+                </div>
+                <button type="submit" className="lf-btn" disabled={loading || !role}>
+                  {loading ? "Signing in..." : "Sign in with Email"}
+                </button>
+              </form>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                <span style={{ fontSize: "0.76rem", color: "var(--muted)", fontWeight: 600 }}>OR</span>
+                <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+              </div>
+
               <div>
-                <label className="lf-label">Verified Google account</label>
+                <label className="lf-label">Google account</label>
                 <div style={{ marginTop: 8 }}>
                   <GoogleSignInButton
                     disabled={loading || !role}
@@ -288,16 +345,7 @@ export default function Login() {
                     text="signin_with"
                   />
                 </div>
-                <p style={{ marginTop: 8, fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.5 }}>
-                  Use the Google account that matches your workspace email.
-                </p>
               </div>
-
-              {loading && (
-                <button type="button" className="lf-btn" disabled>
-                  Signing in...
-                </button>
-              )}
 
               <p style={{ textAlign: "center", fontSize: "0.84rem", color: "var(--muted)" }}>
                 No account?{" "}

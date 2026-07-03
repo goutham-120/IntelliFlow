@@ -10,6 +10,16 @@ export const createUser = async (data) => {
   return response.data;
 };
 
+export const updateUser = async (userId, data) => {
+  const response = await api.patch(`/users/${userId}`, data);
+  return response.data;
+};
+
+export const deleteUser = async (userId) => {
+  const response = await api.delete(`/users/${userId}`);
+  return response.data;
+};
+
 // ─── NEW ───────────────────────────────────────────────────────────────────
 // Activates or deactivates a user. Expects the backend route:
 //   PATCH /users/:userId/status   body: { isActive: boolean }

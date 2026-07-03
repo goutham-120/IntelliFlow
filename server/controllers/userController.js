@@ -1,4 +1,10 @@
-import { createUserService, getUsersService,setUserActiveStatusService } from "../services/userService.js";
+import {
+  createUserService,
+  deleteUserService,
+  getUsersService,
+  setUserActiveStatusService,
+  updateUserService,
+} from "../services/userService.js";
 import { createController } from "./controllerHandler.js";
 
 export const createUser = createController("Create User", createUserService, (req) => ({
@@ -19,4 +25,17 @@ export const setUserActiveStatus = createController(
 
 export const getUsers = createController("Get Users", getUsersService, (req) => ({
   organizationId: req.user.organizationId,
+}));
+
+export const updateUser = createController("Update User", updateUserService, (req) => ({
+  organizationId: req.user.organizationId,
+  userId: req.params.userId,
+  requestingUserId: req.user._id,
+  updates: req.body,
+}));
+
+export const deleteUser = createController("Delete User", deleteUserService, (req) => ({
+  organizationId: req.user.organizationId,
+  userId: req.params.userId,
+  requestingUserId: req.user._id,
 }));

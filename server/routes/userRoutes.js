@@ -1,9 +1,14 @@
 import express from "express";
-import { createUser, getUsers } from "../controllers/userController.js";
+import {
+  createUser,
+  deleteUser,
+  getUsers,
+  setUserActiveStatus,
+  updateUser,
+} from "../controllers/userController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { authorizeRoles } from "../middleware/rbacMiddleware.js";
-import { validateCreateUser } from "../validators/userValidator.js";
-import { setUserActiveStatus } from "../controllers/userController.js";
+import { validateCreateUser, validateUpdateUser } from "../validators/userValidator.js";
 
 
 const router = express.Router();
@@ -11,5 +16,7 @@ const router = express.Router();
 // Admin-only routes
 router.post("/", protect, authorizeRoles("admin"), validateCreateUser, createUser);
 router.get("/", protect, authorizeRoles("admin"), getUsers);
+router.patch("/:userId", protect, authorizeRoles("admin"), validateUpdateUser, updateUser);
 router.patch("/:userId/status", protect, authorizeRoles("admin"), setUserActiveStatus);
+router.delete("/:userId", protect, authorizeRoles("admin"), deleteUser);
 export default router;
