@@ -6,23 +6,6 @@ import { fetchWorkflows } from "../../services/workflowService";
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const cardClass =
   "rounded-lg border border-slate-800 bg-[#0b1724] shadow-[0_18px_44px_rgba(0,0,0,0.18)]";
-const accents = ["emerald", "blue", "violet", "amber", "teal", "rose"];
-const statTone = {
-  amber:   "bg-amber-500/20 text-amber-300 ring-amber-400/20",
-  blue:    "bg-blue-500/20 text-blue-300 ring-blue-400/20",
-  emerald: "bg-emerald-500/20 text-emerald-300 ring-emerald-400/20",
-  rose:    "bg-rose-500/20 text-rose-300 ring-rose-400/20",
-  teal:    "bg-teal-500/20 text-teal-300 ring-teal-400/20",
-  violet:  "bg-violet-500/20 text-violet-300 ring-violet-400/20",
-};
-const tileTone = {
-  amber:   "bg-amber-500",
-  blue:    "bg-blue-500",
-  emerald: "bg-emerald-500",
-  rose:    "bg-rose-500",
-  teal:    "bg-teal-500",
-  violet:  "bg-violet-500",
-};
 
 const PAGE_SIZE = 6;
 
@@ -67,14 +50,13 @@ export default function WorkflowList() {
         : null;
 
     return [
-      { label: "Total Workflows",    value: workflows.length,  color: "emerald" },
-      { label: "Active Workflows",   value: active.length,     color: "blue"    },
-      { label: "Inactive Workflows", value: inactive.length,   color: "violet"  },
-      { label: "Total Stages",       value: totalStages,       color: "amber"   },
+      { label: "Total Workflows",    value: workflows.length },
+      { label: "Active Workflows",   value: active.length },
+      { label: "Inactive Workflows", value: inactive.length },
+      { label: "Total Stages",       value: totalStages },
       {
         label: "Avg. Cycle Time",
         value: avgCycle ? `${avgCycle}d` : totalTasks === 0 ? "No tasks yet" : "—",
-        color: "teal",
       },
     ];
   }, [workflows]);
@@ -187,8 +169,8 @@ export default function WorkflowList() {
 
       {/* Stat cards — all real numbers */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {stats.map(({ label, value, color }) => (
-          <StatCard key={label} color={color} label={label} value={value} />
+        {stats.map(({ label, value }) => (
+          <StatCard key={label} label={label} value={value} />
         ))}
       </section>
 
@@ -217,16 +199,11 @@ export default function WorkflowList() {
 }
 
 // ─── Stat card (no fake delta) ────────────────────────────────────────────────
-function StatCard({ color, label, value }) {
+function StatCard({ label, value }) {
   return (
-    <article className={`${cardClass} flex items-center gap-4 p-5`}>
-      <div className={`flex h-14 w-14 items-center justify-center rounded-full ring-1 ${statTone[color]}`}>
-        <span className={`h-7 w-7 rounded-full ${tileTone[color]}`} />
-      </div>
-      <div>
-        <p className="text-sm text-slate-400">{label}</p>
-        <p className="mt-2 text-2xl font-bold text-white sm:text-3xl">{value}</p>
-      </div>
+    <article className={`${cardClass} p-5`}>
+      <p className="text-sm text-slate-400">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-white sm:text-3xl">{value}</p>
     </article>
   );
 }
@@ -251,7 +228,7 @@ function WorkflowPicker({
         <p className="p-5 text-sm text-slate-400">No workflows found.</p>
       ) : (
         <div className="divide-y divide-slate-800">
-          {workflows.map((workflow, index) => (
+          {workflows.map((workflow) => (
             <button
               key={workflow._id}
               onClick={() => onSelect(workflow._id)}
@@ -261,7 +238,6 @@ function WorkflowPicker({
                   : "hover:bg-slate-900/65"
               }`}
             >
-              <IconTile index={(page - 1) * pageSize + index} className="hidden sm:!grid" />
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="truncate text-sm font-semibold text-white">{workflow.name}</p>
@@ -336,7 +312,6 @@ function WorkflowOverview({ groupsById, isAdmin, workflow }) {
       {/* Header */}
       <div className="flex flex-col gap-4 border-b border-slate-800 p-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-4">
-          <IconTile index={0} />
           <div>
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-white">{workflow.name}</h2>
@@ -370,11 +345,10 @@ function WorkflowOverview({ groupsById, isAdmin, workflow }) {
           <p className="text-sm text-slate-400">No stages defined yet.</p>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-            {stages.map((stage, index) => (
+            {stages.map((stage) => (
               <StageCard
                 key={`${stage.name}-${stage.order}`}
                 group={groupName(stage.groupId, groupsById)}
-                index={index}
                 stage={stage}
               />
             ))}
@@ -439,41 +413,23 @@ function HealthCard({ workflow }) {
   // derive what we can; "pending review" / "overdue" aren't in the enriched data
   // so we show what we actually know and skip the rest
   const items = [
-    { label: "Completed",   value: completed, color: "bg-emerald-500" },
-    { label: "Active",      value: active,    color: "bg-blue-500"    },
-    { label: "Not Started", value: Math.max(0, total - active - completed), color: "bg-violet-500" },
+    { label: "Completed",   value: completed },
+    { label: "Active",      value: active },
+    { label: "Not Started", value: Math.max(0, total - active - completed) },
   ];
-
-  // Proportional conic gradient from real data
-  const completedPct = total > 0 ? (completed / total) * 100 : 0;
-  const activePct    = total > 0 ? (active    / total) * 100 : 0;
-  const conicStop1   = completedPct.toFixed(1);
-  const conicStop2   = (completedPct + activePct).toFixed(1);
-  const gradient =
-    total > 0
-      ? `conic-gradient(#10b981 0 ${conicStop1}%, #2563eb ${conicStop1}% ${conicStop2}%, #7c3aed ${conicStop2}% 100%)`
-      : "conic-gradient(#1e293b 0 100%)";
 
   return (
     <div className="rounded-lg border border-slate-800 bg-[#081421] p-5">
       <h3 className="mb-4 font-semibold text-white">Workflow Health</h3>
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-        <div
-          className="grid h-40 w-40 shrink-0 place-items-center rounded-full"
-          style={{ background: gradient }}
-        >
-          <div className="grid h-24 w-24 place-items-center rounded-full bg-[#081421] text-center">
-            <span className="text-2xl font-bold text-white">{total}</span>
-            <span className="-mt-5 block text-xs text-slate-400">Total Tasks</span>
-          </div>
+      <div className="grid gap-4">
+        <div>
+          <p className="text-sm text-slate-400">Total Tasks</p>
+          <p className="mt-2 text-3xl font-bold text-white">{total}</p>
         </div>
-        <div className="grid flex-1 gap-3">
-          {items.map(({ label, value, color }) => (
+        <div className="grid gap-3">
+          {items.map(({ label, value }) => (
             <div key={label} className="flex items-center justify-between gap-4 text-sm">
-              <span className="flex items-center gap-3 text-slate-300">
-                <span className={`h-3 w-3 rounded-full ${color}`} />
-                {label}
-              </span>
+              <span className="text-slate-300">{label}</span>
               <span className="text-slate-300">{value}</span>
             </div>
           ))}
@@ -484,17 +440,13 @@ function HealthCard({ workflow }) {
 }
 
 // ─── Stage card (no fake avg times) ──────────────────────────────────────────
-function StageCard({ group, index, stage }) {
+function StageCard({ group, stage }) {
   return (
-    <article className="relative min-h-48 rounded-lg border border-slate-700 bg-[#0b1724] p-4 text-center">
-      <span className="absolute -top-4 left-1/2 grid h-8 w-8 -translate-x-1/2 place-items-center rounded-full bg-emerald-500 text-sm font-bold text-white">
-        {index + 1}
-      </span>
-      <IconTile index={index} center />
-      <h4 className="mt-3 font-semibold text-white">{stage.name}</h4>
+    <article className="min-h-48 rounded-lg border border-slate-700 bg-[#0b1724] p-4 text-center">
+      <h4 className="font-semibold text-white">{stage.name}</h4>
       <InfoRow label="Group"      value={group}                                       compact />
       <InfoRow label="Assignment" value={stage.assignmentType === "manual" ? "Manual" : "Auto"} compact />
-      <span className="mt-3 inline-flex rounded-full bg-blue-500/12 px-3 py-1 text-xs text-blue-300">
+      <span className="mt-3 inline-flex rounded bg-blue-500/12 px-3 py-1 text-xs text-blue-300">
         {stage.assignmentType === "manual" ? "Manual Review" : "Auto Assign"}
       </span>
     </article>
@@ -508,15 +460,6 @@ function InfoRow({ compact = false, label, value }) {
       <span className="text-slate-500">{label}</span>
       <span className="text-slate-300">{value}</span>
     </div>
-  );
-}
-
-function IconTile({ center = false, index, className = "" }) {
-  const color = accents[index % accents.length];
-  return (
-    <span className={`${center ? "mx-auto mt-2" : ""} grid h-11 w-11 place-items-center rounded ${tileTone[color]} text-lg font-bold text-white ${className}`}>
-      &lt;/&gt;
-    </span>
   );
 }
 
