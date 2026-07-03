@@ -2,7 +2,7 @@ import { formatDateTime } from "../../utils/formatDate";
 
 export default function AuditTable({ entries = [] }) {
   return (
-    <div className="overflow-x-auto rounded-[30px] border border-slate-700/80 bg-slate-950/72 shadow-[0_18px_45px_rgba(2,6,23,0.24)] backdrop-blur-xl">
+    <div className="overflow-x-auto rounded-lg border border-slate-700/80 bg-slate-950/72 shadow-[0_18px_45px_rgba(2,6,23,0.24)] backdrop-blur-xl">
       <table className="w-full min-w-[760px] text-left text-sm text-slate-200">
         <thead className="bg-slate-900/90 text-xs uppercase tracking-wide text-slate-400">
           <tr>

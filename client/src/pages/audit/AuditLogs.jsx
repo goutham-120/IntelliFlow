@@ -39,7 +39,7 @@ export default function AuditLogs() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[32px] border border-slate-700/80 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.14),transparent_26%),radial-gradient(circle_at_right,rgba(45,212,191,0.12),transparent_20%),linear-gradient(135deg,rgba(15,23,42,0.95),rgba(17,24,39,0.84))] p-7 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
+      <section className="rounded-lg border border-slate-700/80 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.14),transparent_26%),radial-gradient(circle_at_right,rgba(45,212,191,0.12),transparent_20%),linear-gradient(135deg,rgba(15,23,42,0.95),rgba(17,24,39,0.84))] p-7 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
         <p className="text-xs uppercase tracking-[0.22em] text-sky-200/80">Traceability</p>
         <h1 className="mt-2 text-3xl font-bold text-white">Audit Timeline</h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-300">
@@ -50,7 +50,7 @@ export default function AuditLogs() {
 
       {loading ? <Loader label="Loading audit timeline..." /> : null}
       {error ? (
-        <div className="rounded-2xl border border-rose-400/40 bg-rose-500/15 p-4 text-rose-200">
+        <div className="rounded-lg border border-rose-400/40 bg-rose-500/15 p-4 text-rose-200">
           {error}
         </div>
       ) : null}

@@ -15,14 +15,14 @@ export default function TaskTimeline({ workflow, task }) {
 
   if (!stages.length) {
     return (
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4 text-sm text-slate-400">
+      <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4 text-sm text-slate-400">
         No workflow stages available.
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.84))] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
+    <div className="rounded-lg border border-slate-800 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.84))] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">
         Stage Timeline
       </h3>
@@ -38,7 +38,7 @@ export default function TaskTimeline({ workflow, task }) {
           return (
             <div
               key={`${stage.order}-${stage.name}`}
-              className={`rounded-xl border px-3 py-2 text-sm ${
+              className={`rounded-lg border px-3 py-2 text-sm ${
                 isCompleted
                   ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-300"
                   : isCurrent

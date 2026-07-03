@@ -389,7 +389,7 @@ export default function TaskDetails() {
 
   return (
     <div className="space-y-4 sm:space-y-8">
-      <div className="rounded-[32px] border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.14),transparent_28%),radial-gradient(circle_at_right,rgba(56,189,248,0.12),transparent_22%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,24,39,0.84))] p-6 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
+      <div className="rounded-lg border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.14),transparent_28%),radial-gradient(circle_at_right,rgba(56,189,248,0.12),transparent_22%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,24,39,0.84))] p-6 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-white sm:text-3xl">Task Command Center</h1>
@@ -401,14 +401,14 @@ export default function TaskDetails() {
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="rounded-xl border border-rose-400/30 bg-rose-500/12 px-4 py-2 text-sm text-rose-200 hover:bg-rose-500/18 disabled:opacity-60"
+                className="rounded-lg border border-rose-400/30 bg-rose-500/12 px-4 py-2 text-sm text-rose-200 hover:bg-rose-500/18 disabled:opacity-60"
               >
                 {deleting ? "Deleting..." : "Delete Task"}
               </button>
             )}
             <Link
               to="/tasks"
-              className="rounded-xl border border-emerald-400/30 bg-emerald-500/12 px-4 py-2 text-sm text-emerald-200 hover:bg-emerald-500/18"
+              className="rounded-lg border border-emerald-400/30 bg-emerald-500/12 px-4 py-2 text-sm text-emerald-200 hover:bg-emerald-500/18"
             >
               Back to Tasks
             </Link>
@@ -417,17 +417,17 @@ export default function TaskDetails() {
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-rose-400/30 bg-rose-500/12 p-3 text-rose-200">
+        <div className="rounded-lg border border-rose-400/30 bg-rose-500/12 p-3 text-rose-200">
           {error}
         </div>
       )}
       {success && (
-        <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/12 p-3 text-emerald-200">
+        <div className="rounded-lg border border-emerald-400/30 bg-emerald-500/12 p-3 text-emerald-200">
           {success}
         </div>
       )}
 
-      <section className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-5 text-sm text-slate-300 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
+      <section className="rounded-lg border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-5 text-sm text-slate-300 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
         <p className="font-medium text-white">How to use this page</p>
         <p className="mt-2 text-slate-400">
           The left side shows stage progress and team-based actions.
@@ -436,7 +436,7 @@ export default function TaskDetails() {
             : " Editing task details is available to admins only."}
         </p>
         {task?.description && (
-          <div className="mt-4 rounded-2xl border border-slate-800/90 bg-slate-950/70 p-4">
+          <div className="mt-4 rounded-lg border border-slate-800/90 bg-slate-950/70 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
               Task Description
             </p>
@@ -467,7 +467,7 @@ export default function TaskDetails() {
           <TaskTimeline workflow={timelineWorkflow} task={task} />
 
           {canUseTeamLoadBalancing && (
-            <section className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.84))] p-4 shadow-[0_18px_45px_rgba(2,6,23,0.24)]">
+            <section className="rounded-lg border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.84))] p-4 shadow-[0_18px_45px_rgba(2,6,23,0.24)]">
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">
                 Team Load Balance
               </h3>
@@ -475,14 +475,14 @@ export default function TaskDetails() {
                 Only the task&apos;s current team can rebalance workload for this task.
               </p>
               <div className="space-y-3">
-                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">
+                <div className="rounded-lg border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">
                   Team: <span className="font-medium text-white">{task.assignedGroupId?.name}</span>
                 </div>
                 <button
                   type="button"
                   onClick={handleAssignUsingGroup}
                   disabled={assigningByGroup}
-                  className="w-full rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-200 hover:bg-emerald-500/16 disabled:opacity-60"
+                  className="w-full rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-200 hover:bg-emerald-500/16 disabled:opacity-60"
                 >
                   {assigningByGroup ? "Assigning..." : "Auto Assign by Workload"}
                 </button>
@@ -492,10 +492,10 @@ export default function TaskDetails() {
         </div>
 
         {isAdmin ? (
-          <section className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-6 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
+          <section className="rounded-lg border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-6 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-xl font-semibold text-white">Edit Task</h2>
-              <div className="inline-flex rounded-xl border border-slate-700 bg-slate-950/70 p-1">
+              <div className="inline-flex rounded-lg border border-slate-700 bg-slate-950/70 p-1">
                 <button
                   type="button"
                   onClick={() => setMode("workflow")}
@@ -521,7 +521,7 @@ export default function TaskDetails() {
               </div>
             </div>
 
-            <div className="mb-4 rounded-2xl border border-slate-800/90 bg-slate-950/70 p-4 text-sm text-slate-300">
+            <div className="mb-4 rounded-lg border border-slate-800/90 bg-slate-950/70 p-4 text-sm text-slate-300">
               <p className="font-medium text-white">Mode guide</p>
               <p className="mt-2 text-slate-400">
                 Workflow mode keeps the task tied to an ordered process. Standalone mode is for
@@ -536,7 +536,7 @@ export default function TaskDetails() {
                 type="text"
                 value={form.title}
                 onChange={(e) => setField("title", e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                 required
               />
             </label>
@@ -547,7 +547,7 @@ export default function TaskDetails() {
                 value={form.description}
                 onChange={(e) => setField("description", e.target.value)}
                 rows={5}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                 placeholder="Add task context, expected outcome, or handoff notes"
               />
             </label>
@@ -557,7 +557,7 @@ export default function TaskDetails() {
               <select
                 value={form.status}
                 onChange={(e) => setField("status", e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
               >
                 {TASK_STATUS_OPTIONS.map((status) => (
                   <option key={status.value} value={status.value}>
@@ -573,7 +573,7 @@ export default function TaskDetails() {
                 <select
                   value={form.assignedTo}
                   onChange={(e) => setField("assignedTo", e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                 >
                   <option value="">Unassigned</option>
                   {users.map((item) => (
@@ -592,7 +592,7 @@ export default function TaskDetails() {
                   <select
                     value={form.workflowId}
                     onChange={(e) => handleWorkflowChange(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                   >
                     <option value="">Select workflow</option>
                     {workflows.map((workflow) => (
@@ -608,7 +608,7 @@ export default function TaskDetails() {
                   <select
                     value={form.stageName}
                     onChange={(e) => setField("stageName", e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                   >
                     <option value="">Select stage</option>
                     {selectedWorkflowStages.map((stage) => (
@@ -625,7 +625,7 @@ export default function TaskDetails() {
                 <select
                   value={form.assignedGroupId}
                   onChange={(e) => setField("assignedGroupId", e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                 >
                   <option value="">Unassigned</option>
                   {groups.map((group) => (
@@ -641,7 +641,7 @@ export default function TaskDetails() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-xl bg-[linear-gradient(135deg,#0f766e,#10b981)] px-5 py-2.5 font-semibold text-white shadow-[0_12px_24px_rgba(16,185,129,0.18)] transition hover:brightness-105 disabled:opacity-60"
+                className="rounded-lg bg-[linear-gradient(135deg,#0f766e,#10b981)] px-5 py-2.5 font-semibold text-white shadow-[0_12px_24px_rgba(16,185,129,0.18)] transition hover:brightness-105 disabled:opacity-60"
               >
                 {saving ? "Saving..." : "Save Changes"}
               </button>
@@ -649,22 +649,22 @@ export default function TaskDetails() {
             </form>
           </section>
         ) : (
-          <section className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-6 text-sm text-slate-300 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
+          <section className="rounded-lg border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-6 text-sm text-slate-300 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
             <h2 className="text-xl font-semibold text-white">Task Details</h2>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+              <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Status</p>
                 <p className="mt-2 font-medium text-white">{task.status}</p>
               </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+              <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Assignee</p>
                 <p className="mt-2 font-medium text-white">{task.assignedTo?.name || "Unassigned"}</p>
               </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+              <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Workflow</p>
                 <p className="mt-2 font-medium text-white">{task.workflowId?.name || "None"}</p>
               </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+              <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Current Stage</p>
                 <p className="mt-2 font-medium text-white">{task.stageName || "None"}</p>
               </div>

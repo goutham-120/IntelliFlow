@@ -147,7 +147,7 @@ export default function TaskCreate() {
 
   return (
     <div className="space-y-4 sm:space-y-8">
-      <div className="rounded-[32px] border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.14),transparent_28%),radial-gradient(circle_at_right,rgba(56,189,248,0.12),transparent_22%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,24,39,0.84))] p-6 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
+      <div className="rounded-lg border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.14),transparent_28%),radial-gradient(circle_at_right,rgba(56,189,248,0.12),transparent_22%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,24,39,0.84))] p-6 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
         <h1 className="text-2xl font-bold text-white sm:text-3xl">Create Task</h1>
         <p className="text-sm text-slate-300">
           Choose the right creation path so new users understand whether work should
@@ -156,17 +156,17 @@ export default function TaskCreate() {
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-rose-400/30 bg-rose-500/12 p-3 text-rose-200">
+        <div className="rounded-lg border border-rose-400/30 bg-rose-500/12 p-3 text-rose-200">
           {error}
         </div>
       )}
 
-      <section className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-6 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
+      <section className="rounded-lg border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-6 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
         {loading ? (
           <div className="text-slate-400">Loading...</div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="rounded-2xl border border-slate-800/90 bg-slate-950/70 p-4 text-sm text-slate-300">
+            <div className="rounded-lg border border-slate-800/90 bg-slate-950/70 p-4 text-sm text-slate-300">
               <p className="font-medium text-white">Beginner guide</p>
               <p className="mt-2 text-slate-400">
                 Use <span className="text-white">Workflow</span> when the task should move
@@ -174,7 +174,7 @@ export default function TaskCreate() {
                 it&apos;s a direct work item without a workflow lifecycle.
               </p>
             </div>
-            <div className="inline-flex rounded-xl border border-slate-700 bg-slate-950/70 p-1">
+            <div className="inline-flex rounded-lg border border-slate-700 bg-slate-950/70 p-1">
               <button
                 type="button"
                 onClick={() => setCreateMode("workflow")}
@@ -204,7 +204,7 @@ export default function TaskCreate() {
               placeholder="Task title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
               required
             />
 
@@ -213,7 +213,7 @@ export default function TaskCreate() {
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               rows={4}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
             />
 
             {createMode === "workflow" ? (
@@ -221,7 +221,7 @@ export default function TaskCreate() {
                 <select
                   value={workflowId}
                   onChange={(event) => setWorkflowId(event.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                 >
                   <option value="">Select workflow</option>
                   {workflows
@@ -233,7 +233,7 @@ export default function TaskCreate() {
                     ))}
                 </select>
                 {selectedWorkflow && initialWorkflowStage && (
-                  <div className="rounded-2xl border border-slate-800/90 bg-slate-950/70 p-4 text-sm text-slate-300">
+                  <div className="rounded-lg border border-slate-800/90 bg-slate-950/70 p-4 text-sm text-slate-300">
                     <p className="font-medium text-white">
                       First stage: {initialWorkflowStage.order}. {initialWorkflowStage.name}
                     </p>
@@ -251,7 +251,7 @@ export default function TaskCreate() {
                     <select
                       value={assignedTo}
                       onChange={(event) => setAssignedTo(event.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                      className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                     >
                       <option value="">Auto assign if left empty</option>
                       {stageMembers.map((member) => (
@@ -271,7 +271,7 @@ export default function TaskCreate() {
               <select
                 value={assignedGroupId}
                 onChange={(event) => setAssignedGroupId(event.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-4 py-2.5 text-slate-100 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
               >
                 <option value="">Select team (optional)</option>
                 {groups.map((group) => (
@@ -286,13 +286,13 @@ export default function TaskCreate() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="rounded-xl bg-[linear-gradient(135deg,#0f766e,#10b981)] px-5 py-2.5 font-semibold text-white shadow-[0_12px_24px_rgba(16,185,129,0.18)] transition hover:brightness-105 disabled:opacity-60"
+                className="rounded-lg bg-[linear-gradient(135deg,#0f766e,#10b981)] px-5 py-2.5 font-semibold text-white shadow-[0_12px_24px_rgba(16,185,129,0.18)] transition hover:brightness-105 disabled:opacity-60"
               >
                 {submitting ? "Creating..." : "Create Task"}
               </button>
               <Link
                 to="/tasks"
-                className="rounded-xl border border-slate-700 bg-slate-950/70 px-5 py-2.5 text-sm text-slate-300 transition hover:border-slate-500 hover:bg-slate-900"
+                className="rounded-lg border border-slate-700 bg-slate-950/70 px-5 py-2.5 text-sm text-slate-300 transition hover:border-slate-500 hover:bg-slate-900"
               >
                 Back to Tasks
               </Link>

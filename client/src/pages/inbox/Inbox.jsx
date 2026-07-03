@@ -119,7 +119,7 @@ export default function Inbox() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[32px] border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.14),transparent_28%),radial-gradient(circle_at_right,rgba(56,189,248,0.12),transparent_22%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,24,39,0.84))] p-6 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
+      <div className="rounded-lg border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.14),transparent_28%),radial-gradient(circle_at_right,rgba(56,189,248,0.12),transparent_22%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,24,39,0.84))] p-6 shadow-[0_24px_60px_rgba(2,6,23,0.28)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200/80">
@@ -135,7 +135,7 @@ export default function Inbox() {
               type="button"
               onClick={() => loadNotifications(true)}
               disabled={refreshing}
-              className="rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-2 text-sm text-slate-200 transition hover:border-slate-500 hover:bg-slate-900 disabled:opacity-60"
+              className="rounded-lg border border-slate-700 bg-slate-900/90 px-4 py-2 text-sm text-slate-200 transition hover:border-slate-500 hover:bg-slate-900 disabled:opacity-60"
             >
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
@@ -143,7 +143,7 @@ export default function Inbox() {
               type="button"
               onClick={handleMarkAllRead}
               disabled={markingAll || !notifications.some((item) => !item.isRead)}
-              className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-200 transition hover:bg-emerald-500/16 disabled:opacity-60"
+              className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-200 transition hover:bg-emerald-500/16 disabled:opacity-60"
             >
               {markingAll ? "Marking..." : "Mark All Read"}
             </button>
@@ -152,17 +152,17 @@ export default function Inbox() {
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-rose-400/30 bg-rose-500/12 p-3 text-rose-200">
+        <div className="rounded-lg border border-rose-400/30 bg-rose-500/12 p-3 text-rose-200">
           {error}
         </div>
       )}
       {success && (
-        <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/12 p-3 text-emerald-200">
+        <div className="rounded-lg border border-emerald-400/30 bg-emerald-500/12 p-3 text-emerald-200">
           {success}
         </div>
       )}
 
-      <section className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-4 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
+      <section className="rounded-lg border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-4 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-200">
@@ -181,7 +181,7 @@ export default function Inbox() {
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
+      <section className="rounded-lg border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
         {loading ? (
           <div className="p-6 text-slate-400">Loading inbox...</div>
         ) : !notifications.length ? (
@@ -203,14 +203,14 @@ export default function Inbox() {
                       {notification.message}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
-                      <span className="rounded-xl border border-slate-700 bg-slate-900/70 px-2 py-1">
+                      <span className="rounded-lg border border-slate-700 bg-slate-900/70 px-2 py-1">
                         Type: {notification.type}
                       </span>
-                      <span className="rounded-xl border border-slate-700 bg-slate-900/70 px-2 py-1">
+                      <span className="rounded-lg border border-slate-700 bg-slate-900/70 px-2 py-1">
                         Time: {formatNotificationTime(notification.createdAt)}
                       </span>
                       {notification.taskId?.title && (
-                        <span className="rounded-xl border border-slate-700 bg-slate-900/70 px-2 py-1">
+                        <span className="rounded-lg border border-slate-700 bg-slate-900/70 px-2 py-1">
                           Task: {notification.taskId.title}
                         </span>
                       )}
@@ -222,7 +222,7 @@ export default function Inbox() {
                       <button
                         type="button"
                         onClick={() => handleOpenTask(notification)}
-                        className="rounded-xl border border-sky-400/20 bg-sky-500/10 px-3 py-1.5 text-xs text-sky-200 transition hover:bg-sky-500/16"
+                        className="rounded-lg border border-sky-400/20 bg-sky-500/10 px-3 py-1.5 text-xs text-sky-200 transition hover:bg-sky-500/16"
                       >
                         Open Task
                       </button>
@@ -232,7 +232,7 @@ export default function Inbox() {
                         type="button"
                         onClick={() => handleMarkRead(notification._id)}
                         disabled={busyId === notification._id}
-                        className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200 transition hover:bg-emerald-500/16 disabled:opacity-60"
+                        className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200 transition hover:bg-emerald-500/16 disabled:opacity-60"
                       >
                         {busyId === notification._id ? "Marking..." : "Mark Read"}
                       </button>
