@@ -128,7 +128,7 @@ function DonutChart({ segments, total }) {
   );
 }
 
-function TasksByStatusCard({ taskStatusData }) {
+function TasksByStatusCard({ taskStatusData = [] }) {
   const total=taskStatusData.reduce((s,e)=>s+e.value,0);
   const segments=taskStatusData.map(e=>({label:e.label,color:statusColor(e.label),pct:total>0?(e.value/total)*100:0,count:e.value}));
   return (
@@ -153,7 +153,7 @@ function TasksByStatusCard({ taskStatusData }) {
   );
 }
 
-function TasksByWorkflowCard({ workflowMixData }) {
+function TasksByWorkflowCard({ workflowMixData = [] }) {
   const total=workflowMixData.reduce((s,e)=>s+e.value,0);
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5">
@@ -187,7 +187,7 @@ function TasksByWorkflowCard({ workflowMixData }) {
 const IMPACT_COLORS = { High:"bg-rose-500/20 text-rose-300", Medium:"bg-amber-500/20 text-amber-300", Low:"bg-emerald-500/20 text-emerald-300" };
 const waitImpact = (h) => { const d=h/24; return d>=1.5?"High":d>=0.75?"Medium":"Low"; };
 
-function BottleneckTable({ bottleneckStages }) {
+function BottleneckTable({ bottleneckStages = [] }) {
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5">
       <div className="mb-3 flex items-center justify-between sm:mb-4">
@@ -230,7 +230,7 @@ function BottleneckTable({ bottleneckStages }) {
 }
 
 // ─── Workflow Status Cards ────────────────────────────────────────────────────
-function WorkflowStatusCards({ workflowStatusCards }) {
+function WorkflowStatusCards({ workflowStatusCards = [] }) {
   return (
     <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -280,7 +280,7 @@ function WorkflowStatusCards({ workflowStatusCards }) {
 }
 
 // ─── Performance Table ────────────────────────────────────────────────────────
-function PerformanceTable({ title, rows }) {
+function PerformanceTable({ title, rows = [] }) {
   return (
     <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5">
       <div className="mb-3 flex items-center justify-between sm:mb-4">

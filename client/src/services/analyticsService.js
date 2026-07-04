@@ -11,6 +11,9 @@ export const fetchAnalyticsDashboard = async (lookbackDays = 14) => {
     summary: {
       totalTasks:          payload.summary?.totalTasks          || 0,
       activeTasks:         payload.summary?.activeTasks         || 0,
+      totalWorkflows:      payload.summary?.totalWorkflows      || 0,
+      totalGroups:         payload.summary?.totalGroups         || 0,
+      totalUsers:          payload.summary?.totalUsers          || 0,
       activeWorkflows:     payload.summary?.totalWorkflows       || 0,
       groups:              payload.summary?.totalGroups          || 0,
       users:               payload.summary?.totalUsers           || 0,
