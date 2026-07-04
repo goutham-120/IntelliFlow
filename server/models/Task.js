@@ -52,12 +52,24 @@ const taskSchema = new mongoose.Schema(
         {
           stageName: { type: String, required: true, trim: true },
           description: { type: String, default: "", trim: true },
+          assignedTo: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null,
+          },
+          assignedGroupId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Group",
+            default: null,
+          },
+          startedAt: { type: Date, default: null },
           completedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             required: true,
           },
           completedAt: { type: Date, required: true },
+          durationMs: { type: Number, default: 0, min: 0 },
         },
       ],
       default: [],

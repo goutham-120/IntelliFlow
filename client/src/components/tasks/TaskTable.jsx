@@ -1,21 +1,43 @@
 import { Link } from "react-router-dom";
 import { TASK_STATUS_OPTIONS } from "../../utils/constants";
 
-export default function TaskTable({ tasks=[], loading=false, updatingTaskId="", onQuickStatusUpdate, canEditTasks=false }) {
+export default function TaskTable({
+  tasks = [],
+  loading = false,
+  updatingTaskId = "",
+  onQuickStatusUpdate,
+  canEditTasks = false,
+  currentUserId = "",
+}) {
   if (loading) return <div className="p-6 text-sm text-slate-400">Loading tasks...</div>;
   if (!tasks.length) return <div className="p-6 text-sm text-slate-400">No tasks found.</div>;
 
   return (
     <div className="grid gap-3 p-3 sm:gap-4 sm:p-4 md:grid-cols-2 xl:grid-cols-3">
-      {tasks.map((task) => (
-        <div
-          key={task._id}
-          className="space-y-3 rounded-lg border border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.08),transparent_28%),linear-gradient(180deg,rgba(2,6,23,0.94),rgba(15,23,42,0.84))] p-3 shadow-[0_14px_32px_rgba(2,6,23,0.22)] transition hover:border-emerald-400/30 sm:p-4"
-        >
+      {tasks.map((task) => {
+        const assignedUserId =
+          typeof task.assignedTo === "string" ? task.assignedTo : task.assignedTo?._id;
+        const isCurrentUserStage =
+          task.status !== "done" && currentUserId && String(assignedUserId || "") === currentUserId;
+
+        return (
+          <div
+            key={task._id}
+            className={`space-y-3 rounded-lg border p-3 transition sm:p-4 ${
+              isCurrentUserStage
+                ? "border-emerald-300/60 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_34%),linear-gradient(180deg,rgba(2,6,23,0.96),rgba(15,23,42,0.88))] shadow-[0_0_0_1px_rgba(52,211,153,0.28),0_18px_38px_rgba(16,185,129,0.18)]"
+                : "border-slate-800/90 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.08),transparent_28%),linear-gradient(180deg,rgba(2,6,23,0.94),rgba(15,23,42,0.84))] shadow-[0_14px_32px_rgba(2,6,23,0.22)] hover:border-emerald-400/30"
+            }`}
+          >
           {/* Title + actions row */}
           <div className="flex flex-wrap items-start justify-between gap-2">
             <h3 className="text-sm font-semibold text-white sm:text-base">{task.title}</h3>
             <div className="flex items-center gap-1.5 sm:gap-2">
+              {isCurrentUserStage && (
+                <span className="rounded-lg border border-emerald-300/40 bg-emerald-400/15 px-2 py-1 text-xs font-semibold text-emerald-100">
+                  Your Stage
+                </span>
+              )}
               {canEditTasks ? (
                 <select
                   value={task.status}
@@ -61,7 +83,8 @@ export default function TaskTable({ tasks=[], loading=false, updatingTaskId="", 
               : "Open to review workflow stage progress and available actions."}
           </p>
         </div>
-      ))}
+      );
+      })}
     </div>
   );
 }

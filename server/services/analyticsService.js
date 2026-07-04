@@ -11,6 +11,25 @@ const daysAgo = (days) => {
   return value;
 };
 
+const toDateKey = (date) => new Date(date).toISOString().slice(0, 10);
+
+const buildDailyBuckets = ({ lookbackDays }) => {
+  const days = Math.max(1, Number(lookbackDays) || 14);
+  const start = daysAgo(days - 1);
+  start.setHours(0, 0, 0, 0);
+
+  return Array.from({ length: days }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    return {
+      date: toDateKey(date),
+      count: 0,
+      totalCycleMs: 0,
+      completedCount: 0,
+    };
+  });
+};
+
 const createPerformanceEntry = (name) => ({
   name,
   totalTasks: 0,
@@ -33,6 +52,16 @@ const toEntityId = (value) => {
   if (!value) return "";
   if (value._id) return String(value._id);
   return String(value);
+};
+
+const getStageDurationMs = ({ entry, fallbackStart }) => {
+  if (Number.isFinite(entry.durationMs) && entry.durationMs >= 0) {
+    return entry.durationMs;
+  }
+
+  const completedAt = new Date(entry.completedAt);
+  const startedAt = entry.startedAt ? new Date(entry.startedAt) : fallbackStart;
+  return Math.max(0, completedAt - startedAt);
 };
 
 const finalizePerformanceEntries = (entries) => {
@@ -108,29 +137,30 @@ const buildStageContributionMetrics = ({ tasks, groups, users }) => {
     let previousCompletedAt = new Date(task.createdAt);
     completedStages.forEach((entry) => {
       const completedAt = new Date(entry.completedAt);
-      const durationMs = Math.max(0, completedAt - previousCompletedAt);
+      const durationMs = getStageDurationMs({ entry, fallbackStart: previousCompletedAt });
       previousCompletedAt = completedAt;
 
-      if (entry.stageGroupId) {
-        const groupMeta = groupsById.get(entry.stageGroupId);
+      const assignedGroupId = toEntityId(entry.assignedGroupId) || entry.stageGroupId;
+      if (assignedGroupId) {
+        const groupMeta = groupsById.get(assignedGroupId);
         const teamEntry = getOrCreatePerformanceEntry(
           teamPerformanceMap,
-          entry.stageGroupId,
-          groupMeta?.name || "Unknown Team"
+          assignedGroupId,
+          entry.assignedGroupId?.name || groupMeta?.name || "Unknown Team"
         );
         teamEntry.totalTasks += 1;
         teamEntry.completedTasks += 1;
         teamEntry.totalCompletionMs += durationMs;
       }
 
-      const completedById = toEntityId(entry.completedBy);
-      if (completedById) {
+      const stageOwnerId = toEntityId(entry.assignedTo) || toEntityId(entry.completedBy);
+      if (stageOwnerId) {
         hasEmployeeStageCompletion = true;
-        const userMeta = usersById.get(completedById);
+        const userMeta = usersById.get(stageOwnerId);
         const employeeEntry = getOrCreatePerformanceEntry(
           employeePerformanceMap,
-          completedById,
-          entry.completedBy?.name || userMeta?.name || "Unknown User"
+          stageOwnerId,
+          entry.assignedTo?.name || entry.completedBy?.name || userMeta?.name || "Unknown User"
         );
         employeeEntry.totalTasks += 1;
         employeeEntry.completedTasks += 1;
@@ -190,6 +220,119 @@ const buildStageContributionMetrics = ({ tasks, groups, users }) => {
     teamPerformance: finalizePerformanceEntries(Array.from(teamPerformanceMap.values())),
     employeePerformance: finalizePerformanceEntries(Array.from(employeePerformanceMap.values())),
   };
+};
+
+const buildTasksCreatedSeries = ({ tasks, lookbackDays }) => {
+  const buckets = buildDailyBuckets({ lookbackDays });
+  const bucketMap = new Map(buckets.map((bucket) => [bucket.date, bucket]));
+
+  tasks.forEach((task) => {
+    const key = toDateKey(task.createdAt);
+    const bucket = bucketMap.get(key);
+    if (bucket) bucket.count += 1;
+  });
+
+  return buckets.map(({ date, count }) => ({ date, count }));
+};
+
+const buildTasksCompletedSeries = ({ tasks, lookbackDays }) => {
+  const buckets = buildDailyBuckets({ lookbackDays });
+  const bucketMap = new Map(buckets.map((bucket) => [bucket.date, bucket]));
+
+  tasks.forEach((task) => {
+    if (task.status !== "done") return;
+    const completedAt =
+      [...(task.completedStages || [])]
+        .map((entry) => entry.completedAt)
+        .filter(Boolean)
+        .sort((a, b) => new Date(b) - new Date(a))[0] || task.updatedAt;
+    const key = toDateKey(completedAt);
+    const bucket = bucketMap.get(key);
+    if (!bucket) return;
+
+    bucket.count += 1;
+    bucket.completedCount += 1;
+    bucket.totalCycleMs += Math.max(0, new Date(completedAt) - new Date(task.createdAt));
+  });
+
+  return buckets.map(({ date, count, completedCount, totalCycleMs }) => ({
+    date,
+    count,
+    avgCycleHours:
+      completedCount > 0
+        ? Number((totalCycleMs / completedCount / (1000 * 60 * 60)).toFixed(1))
+        : 0,
+  }));
+};
+
+const buildBottleneckStages = ({ tasks }) => {
+  const stageMap = new Map();
+
+  tasks.forEach((task) => {
+    const workflowStages = [...(task.workflowId?.stages || [])].sort((a, b) => a.order - b.order);
+    const stageDetailsByName = new Map(
+      workflowStages.map((stage) => [
+        String(stage.name || "").trim().toLowerCase(),
+        { order: stage.order, workflowName: task.workflowId?.name || "Workflow" },
+      ])
+    );
+
+    let previousCompletedAt = new Date(task.createdAt);
+    [...(task.completedStages || [])]
+      .map((entry) => {
+        const details = stageDetailsByName.get(String(entry.stageName || "").trim().toLowerCase());
+        return { ...entry, stageOrder: details?.order ?? Number.MAX_SAFE_INTEGER, workflowName: details?.workflowName || task.workflowId?.name || "Workflow" };
+      })
+      .sort((a, b) => {
+        if (a.stageOrder !== b.stageOrder) return a.stageOrder - b.stageOrder;
+        return new Date(a.completedAt) - new Date(b.completedAt);
+      })
+      .forEach((entry) => {
+        const durationMs = getStageDurationMs({ entry, fallbackStart: previousCompletedAt });
+        previousCompletedAt = new Date(entry.completedAt);
+        const key = `${task.workflowId?._id || "standalone"}:${entry.stageName}`;
+        const existing = stageMap.get(key) || {
+          stageName: entry.stageName || "Unstaged",
+          workflowName: entry.workflowName,
+          taskCount: 0,
+          totalWaitMs: 0,
+        };
+        existing.taskCount += 1;
+        existing.totalWaitMs += durationMs;
+        stageMap.set(key, existing);
+      });
+
+    if (task.status !== "done" && task.stageName && task.workflowId) {
+      const key = `${task.workflowId?._id || "standalone"}:${task.stageName}`;
+      const existing = stageMap.get(key) || {
+        stageName: task.stageName,
+        workflowName: task.workflowId?.name || "Workflow",
+        taskCount: 0,
+        totalWaitMs: 0,
+      };
+      existing.taskCount += 1;
+      existing.totalWaitMs += Math.max(0, new Date() - previousCompletedAt);
+      stageMap.set(key, existing);
+    }
+  });
+
+  return Array.from(stageMap.values())
+    .map((entry) => ({
+      stageName: entry.stageName,
+      workflowName: entry.workflowName,
+      taskCount: entry.taskCount,
+      avgWaitHours:
+        entry.taskCount > 0
+          ? Number((entry.totalWaitMs / entry.taskCount / (1000 * 60 * 60)).toFixed(1))
+          : 0,
+    }))
+    .filter((entry) => entry.taskCount > 0)
+    .sort((a, b) => {
+      if (b.avgWaitHours !== a.avgWaitHours) return b.avgWaitHours - a.avgWaitHours;
+      if (b.taskCount !== a.taskCount) return b.taskCount - a.taskCount;
+      return a.stageName.localeCompare(b.stageName);
+    })
+    .slice(0, 8);
 };
 
 export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays = 14 }) => {
@@ -261,6 +404,8 @@ export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays 
       .populate("workflowId", "name stages")
       .populate("assignedGroupId", "name")
       .populate("assignedTo", "name")
+      .populate("completedStages.assignedTo", "name")
+      .populate("completedStages.assignedGroupId", "name")
       .populate("completedStages.completedBy", "name"),
     User.find({ organizationId, isActive: true }).select("name"),
     Task.aggregate([
@@ -294,6 +439,15 @@ export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays 
     groups,
     users: activeUsers,
   });
+  const tasksCreatedSeries = buildTasksCreatedSeries({
+    tasks: tasksForContributionMetrics,
+    lookbackDays,
+  });
+  const tasksCompletedSeries = buildTasksCompletedSeries({
+    tasks: tasksForContributionMetrics,
+    lookbackDays,
+  });
+  const bottleneckStages = buildBottleneckStages({ tasks: tasksForContributionMetrics });
 
   const workflowStatusCountMap = workflowStatusCounts.reduce((acc, entry) => {
     const workflowId = String(entry._id.workflowId);
@@ -357,6 +511,9 @@ export const getAnalyticsSummaryService = async ({ organizationId, lookbackDays 
         label: entry.name,
         value: entry.totalTasks,
       })),
+      tasksCreatedSeries,
+      tasksCompletedSeries,
+      bottleneckStages,
       teamPerformance,
       employeePerformance,
       workflowStatusCards,

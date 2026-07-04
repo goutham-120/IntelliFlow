@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import TaskTable from "../../components/tasks/TaskTable";
 import { TASK_STATUS_OPTIONS } from "../../utils/constants";
-import { fetchTasks, updateTask } from "../../services/taskService";
+import { completeTaskStage, fetchTasks, updateTask } from "../../services/taskService";
 import useRole from "../../hooks/useRole";
 
 export default function TaskList() {
@@ -15,6 +15,14 @@ export default function TaskList() {
   const [success, setSuccess] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const { isAdmin } = useRole();
+  const currentUserId = (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      return String(user?.id || user?._id || "");
+    } catch {
+      return "";
+    }
+  })();
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -48,7 +56,12 @@ export default function TaskList() {
     setSuccess("");
     setUpdatingTaskId(taskId);
     try {
-      const result = await updateTask(taskId, { status });
+      const task = tasks.find((item) => item._id === taskId);
+      const isWorkflowTask = Boolean(task?.workflowId?._id || task?.workflowId);
+      const result =
+        status === "done" && isWorkflowTask && task?.status !== "done"
+          ? await completeTaskStage(taskId, { description: "Marked complete by admin" })
+          : await updateTask(taskId, { status });
       setSuccess(result?.message || "Task updated");
       loadData();
     } catch (err) {
@@ -123,6 +136,7 @@ export default function TaskList() {
           updatingTaskId={updatingTaskId}
           onQuickStatusUpdate={handleQuickStatusUpdate}
           canEditTasks={isAdmin}
+          currentUserId={currentUserId}
         />
       </section>
     </div>

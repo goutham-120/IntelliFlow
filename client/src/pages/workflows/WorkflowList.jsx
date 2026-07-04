@@ -344,7 +344,7 @@ function WorkflowOverview({ groupsById, isAdmin, workflow }) {
         {!stages.length ? (
           <p className="text-sm text-slate-400">No stages defined yet.</p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {stages.map((stage) => (
               <StageCard
                 key={`${stage.name}-${stage.order}`}
@@ -352,9 +352,11 @@ function WorkflowOverview({ groupsById, isAdmin, workflow }) {
                 stage={stage}
               />
             ))}
-            <div className="flex min-h-48 flex-col items-center justify-center rounded-lg border border-dashed border-slate-700 text-center text-sm text-slate-400">
-              <span className="mb-3 text-xs uppercase tracking-wider">Complete</span>
-              Workflow Complete
+            <div className="flex min-h-44 flex-col items-center justify-center rounded-lg border border-dashed border-emerald-400/30 bg-emerald-500/5 p-4 text-center text-sm text-emerald-200">
+              <span className="mb-3 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs uppercase tracking-wider text-emerald-300">
+                Finish
+              </span>
+              <span className="font-semibold text-white">Workflow Complete</span>
             </div>
           </div>
         )}
@@ -441,14 +443,37 @@ function HealthCard({ workflow }) {
 
 // ─── Stage card (no fake avg times) ──────────────────────────────────────────
 function StageCard({ group, stage }) {
+  const isManual = stage.assignmentType === "manual";
+
   return (
-    <article className="min-h-48 rounded-lg border border-slate-700 bg-[#0b1724] p-4 text-center">
-      <h4 className="font-semibold text-white">{stage.name}</h4>
-      <InfoRow label="Group"      value={group}                                       compact />
-      <InfoRow label="Assignment" value={stage.assignmentType === "manual" ? "Manual" : "Auto"} compact />
-      <span className="mt-3 inline-flex rounded bg-blue-500/12 px-3 py-1 text-xs text-blue-300">
-        {stage.assignmentType === "manual" ? "Manual Review" : "Auto Assign"}
-      </span>
+    <article className="flex min-h-44 flex-col rounded-lg border border-slate-700/80 bg-[linear-gradient(180deg,rgba(15,23,42,0.94),rgba(8,20,33,0.86))] p-4 shadow-[0_14px_30px_rgba(2,6,23,0.18)]">
+      <div className="flex items-start justify-between gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-400/25 bg-cyan-500/10 text-sm font-bold text-cyan-200">
+          {stage.order}
+        </span>
+        <span
+          className={`rounded-md px-2 py-1 text-xs font-medium ${
+            isManual
+              ? "bg-amber-500/12 text-amber-200 ring-1 ring-amber-400/25"
+              : "bg-emerald-500/12 text-emerald-200 ring-1 ring-emerald-400/25"
+          }`}
+        >
+          {isManual ? "Manual" : "Auto"}
+        </span>
+      </div>
+      <h4 className="mt-4 text-base font-semibold leading-6 text-white">{stage.name}</h4>
+      <div className="mt-4 grid gap-3 text-sm">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-500">Team</p>
+          <p className="mt-1 truncate font-medium text-slate-200">{group}</p>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-500">Assignment</p>
+          <p className="mt-1 text-slate-300">
+            {isManual ? "Lead selects the next owner" : "Least-loaded member is selected"}
+          </p>
+        </div>
+      </div>
     </article>
   );
 }

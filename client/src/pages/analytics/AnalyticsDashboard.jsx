@@ -21,11 +21,11 @@ const hoursToDisplay = (h) => h===0?"0":h<24?`${h.toFixed(1)}h`:`${(h/24).toFixe
 
 // ─── KPI Stat Cards ───────────────────────────────────────────────────────────
 const STAT_DEFS = [
-  { key:"totalTasks",      label:"Total Tasks",      icon:"📋", bg:"bg-blue-500/20",    color:"text-blue-400"    },
-  { key:"activeTasks",     label:"Active Tasks",     icon:"⚡", bg:"bg-cyan-500/20",    color:"text-cyan-400"    },
-  { key:"activeWorkflows", label:"Workflows",        icon:"🔄", bg:"bg-violet-500/20",  color:"text-violet-400"  },
-  { key:"groups",          label:"Groups",           icon:"👥", bg:"bg-emerald-500/20", color:"text-emerald-400" },
-  { key:"users",           label:"Users",            icon:"🙋", bg:"bg-orange-500/20",  color:"text-orange-400"  },
+  { key:"totalTasks",     label:"Total Tasks",    icon:"T", bg:"bg-blue-500/20",    color:"text-blue-400"    },
+  { key:"activeTasks",    label:"Active Tasks",   icon:"A", bg:"bg-cyan-500/20",    color:"text-cyan-400"    },
+  { key:"totalWorkflows", label:"Workflows",      icon:"W", bg:"bg-violet-500/20",  color:"text-violet-400"  },
+  { key:"totalGroups",    label:"Groups",         icon:"G", bg:"bg-emerald-500/20", color:"text-emerald-400" },
+  { key:"totalUsers",     label:"Users",          icon:"U", bg:"bg-orange-500/20",  color:"text-orange-400"  },
 ];
 
 function StatCards({ summary }) {
@@ -90,7 +90,7 @@ function LineChart({ data, labels, color }) {
   return <canvas ref={canvasRef} style={{width:"100%",height:"100%"}} />;
 }
 
-function ChartsRow({ tasksCreatedSeries, tasksCompletedSeries }) {
+function ChartsRow({ tasksCreatedSeries = [], tasksCompletedSeries = [] }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {[

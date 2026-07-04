@@ -31,25 +31,37 @@ export default function WorkflowCard({
         </span>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         {(workflow.stages || [])
           .sort((a, b) => a.order - b.order)
-          .map((stage) => (
-            <span
+          .map((stage) => {
+            const isManual = (stage.assignmentType || "auto") === "manual";
+            return (
+            <div
               key={`${workflow._id}-${stage.order}`}
-              className="rounded-2xl border border-slate-700/80 bg-slate-900/70 px-3 py-2 text-sm text-slate-300"
+              className="rounded-lg border border-slate-700/80 bg-slate-900/70 p-3 text-sm text-slate-300"
             >
-              <span className="font-medium text-white">
-                {stage.order}. {stage.name}
-              </span>
-              <span className="ml-1 text-slate-500">
-                - {getStageGroupLabel(stage.groupId, groupsById)}
-              </span>
-              <span className="ml-1 text-slate-500">
-                - {(stage.assignmentType || "auto") === "manual" ? "Manual select" : "Auto assign"}
-              </span>
-            </span>
-          ))}
+              <div className="flex items-start gap-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-cyan-400/25 bg-cyan-500/10 text-xs font-bold text-cyan-200">
+                  {stage.order}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-white">{stage.name}</p>
+                  <p className="mt-1 truncate text-xs text-slate-400">
+                    {getStageGroupLabel(stage.groupId, groupsById)}
+                  </p>
+                </div>
+                <span
+                  className={`shrink-0 rounded px-2 py-0.5 text-xs ${
+                    isManual ? "bg-amber-500/12 text-amber-200" : "bg-emerald-500/12 text-emerald-200"
+                  }`}
+                >
+                  {isManual ? "Manual" : "Auto"}
+                </span>
+              </div>
+            </div>
+          );
+          })}
       </div>
 
       {showDetailsLink && (

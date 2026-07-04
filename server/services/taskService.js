@@ -20,6 +20,40 @@ import {
   resolveTaskWorkflowStage,
 } from "./taskService.helpers.js";
 
+const buildStageCompletionEntry = ({ task, currentStage, requesterId, description = "" }) => {
+  const completedAt = new Date();
+  const completedStages = task.completedStages || [];
+  const previousCompletedAt = completedStages.reduce((latest, entry) => {
+    if (!entry?.completedAt) return latest;
+    const completedAtValue = new Date(entry.completedAt);
+    return completedAtValue > latest ? completedAtValue : latest;
+  }, new Date(task.createdAt));
+  const durationMs = Math.max(0, completedAt - previousCompletedAt);
+
+  return {
+    stageName: currentStage.name,
+    description,
+    assignedTo: task.assignedTo || null,
+    assignedGroupId: task.assignedGroupId || currentStage.groupId || null,
+    startedAt: previousCompletedAt,
+    completedBy: requesterId,
+    completedAt,
+    durationMs,
+  };
+};
+
+const recordCurrentStageCompletion = ({ task, currentStage, requesterId, description = "" }) => {
+  const alreadyRecorded = (task.completedStages || []).some(
+    (entry) => entry.stageName.toLowerCase() === currentStage.name.toLowerCase()
+  );
+
+  if (!alreadyRecorded) {
+    task.completedStages.push(
+      buildStageCompletionEntry({ task, currentStage, requesterId, description })
+    );
+  }
+};
+
 export const createTaskService = async ({
   organizationId,
   requesterId,
@@ -151,7 +185,10 @@ export const getTaskByIdService = async ({ organizationId, taskId }) => {
   const task = await Task.findOne({ _id: taskId, organizationId })
     .populate("workflowId", "name stages isActive")
     .populate("assignedGroupId", "name code description isActive")
-    .populate("assignedTo", "name email role isActive");
+    .populate("assignedTo", "name email role isActive")
+    .populate("completedStages.assignedTo", "name email role isActive")
+    .populate("completedStages.assignedGroupId", "name code")
+    .populate("completedStages.completedBy", "name email role isActive");
 
   if (!task) {
     throw createServiceError(404, "Task not found");
@@ -246,6 +283,36 @@ export const updateTaskService = async ({
     stageMovedByStatus = true;
   }
 
+  if (task.workflowId && status === "done") {
+    if (!workflow) {
+      workflow = await ensureWorkflowInOrg({ organizationId, workflowId: task.workflowId });
+    }
+    const { stages, currentStageIndex, currentStage } = resolveTaskWorkflowStage({ workflow, task });
+    recordCurrentStageCompletion({
+      task,
+      currentStage,
+      requesterId,
+      description: "Marked complete by admin",
+    });
+
+    const nextStage = stages[currentStageIndex + 1];
+    if (nextStage) {
+      resolvedStage = nextStage;
+      task.stageName = nextStage.name;
+      task.stageOrder = nextStage.order;
+      task.assignedGroupId = nextStage.groupId;
+      task.assignedTo = await resolveStageAssignee({
+        organizationId,
+        stage: nextStage,
+      });
+      task.status = "in_progress";
+      stageMovedByStatus = true;
+    } else {
+      task.status = "done";
+      stageMovedByStatus = true;
+    }
+  }
+
   if (assignedTo !== undefined) {
     const canAssign = await canRequesterManualAssign({
       organizationId,
@@ -278,7 +345,9 @@ export const updateTaskService = async ({
       task.assignedGroupId &&
       (groupChanged || stageChangedBeforeSave || !task.assignedTo || stageMovedByStatus)
     ) {
-      if (resolvedStage) {
+      if (stageMovedByStatus && status === "done" && task.assignedTo) {
+        // Stage completion already selected the next assignee.
+      } else if (resolvedStage) {
         task.assignedTo = await resolveStageAssignee({
           organizationId,
           stage: resolvedStage,
@@ -366,19 +435,7 @@ export const completeTaskStageService = async ({
     );
   }
 
-  const completionEntry = {
-    stageName: currentStage.name,
-    description,
-    completedBy: requesterId,
-    completedAt: new Date(),
-  };
-
-  const alreadyRecorded = (task.completedStages || []).some(
-    (entry) => entry.stageName.toLowerCase() === currentStage.name.toLowerCase()
-  );
-  if (!alreadyRecorded) {
-    task.completedStages.push(completionEntry);
-  }
+  recordCurrentStageCompletion({ task, currentStage, requesterId, description });
 
   const nextStage = stages[currentStageIndex + 1];
   if (!nextStage) {

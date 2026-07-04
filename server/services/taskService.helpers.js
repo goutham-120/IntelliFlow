@@ -59,7 +59,7 @@ export const canRequesterCompleteStage = async ({
   assignedTo,
 }) => {
   void organizationId;
-  void requesterRole;
+  if (requesterRole === "admin") return true;
   return Boolean(assignedTo && String(assignedTo) === String(requesterId));
 };
 

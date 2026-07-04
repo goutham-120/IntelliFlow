@@ -100,12 +100,16 @@ export default function TaskDetails() {
 
   const canCompleteStage = useMemo(() => {
     if (!task || task.status === "done") return false;
+    if (isAdmin) return true;
     const assignedUserId =
       typeof task?.assignedTo === "string" ? task.assignedTo : task?.assignedTo?._id;
     return String(assignedUserId || "") === currentUserId;
-  }, [currentUserId, task]);
+  }, [currentUserId, isAdmin, task]);
 
-  const canUseTeamLoadBalancing = Boolean(task?.assignedGroupId?._id) && (isAdmin || groupRole === "team_lead");
+  const canUseTeamLoadBalancing =
+    task?.status !== "done" &&
+    Boolean(task?.assignedGroupId?._id) &&
+    (isAdmin || groupRole === "team_lead");
 
   const loadTaskData = useCallback(async () => {
     setLoading(true);
