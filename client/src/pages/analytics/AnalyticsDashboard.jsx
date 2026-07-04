@@ -17,7 +17,15 @@ const CHART_COLORS = ["#34d399","#38bdf8","#a78bfa","#fb923c","#f472b6","#fbbf24
 const statusLabel = (s) => STATUS_META[s]?.label || String(s||"Unknown").split("_").map(w=>w[0].toUpperCase()+w.slice(1)).join(" ");
 const statusColor = (s) => STATUS_META[s]?.color || "#64748b";
 const shortDate = (d) => new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric"});
-const hoursToDisplay = (h) => h===0?"0":h<24?`${h.toFixed(1)}h`:`${(h/24).toFixed(1)}d`;
+const toNumber = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+};
+const hoursToDisplay = (hours) => {
+  const numeric = toNumber(hours);
+  if (numeric === 0) return "0";
+  return numeric < 24 ? `${numeric.toFixed(1)}h` : `${(numeric / 24).toFixed(1)}d`;
+};
 
 // ─── KPI Stat Cards ───────────────────────────────────────────────────────────
 const STAT_DEFS = [
@@ -94,8 +102,8 @@ function ChartsRow({ tasksCreatedSeries = [], tasksCompletedSeries = [] }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {[
-        { title:"Tasks Created Over Time", sub:"Daily count", data:tasksCreatedSeries.map(d=>d.count), labels:tasksCreatedSeries.map(d=>shortDate(d.date)), color:"#34d399" },
-        { title:"Avg. Cycle Time", sub:"Hours from creation to stage completion", data:tasksCompletedSeries.map(d=>d.avgCycleHours), labels:tasksCompletedSeries.map(d=>shortDate(d.date)), color:"#a78bfa" },
+        { title:"Tasks Created Over Time", sub:"Daily count", data:tasksCreatedSeries.map(d=>toNumber(d.count)), labels:tasksCreatedSeries.map(d=>shortDate(d.date)), color:"#34d399" },
+        { title:"Avg. Cycle Time", sub:"Hours from creation to stage completion", data:tasksCompletedSeries.map(d=>toNumber(d.avgCycleHours)), labels:tasksCompletedSeries.map(d=>shortDate(d.date)), color:"#a78bfa" },
       ].map(({title,sub,data,labels,color})=>(
         <div key={title} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5">
           <h3 className="text-xs font-semibold text-white sm:text-sm">{title}</h3>
@@ -129,8 +137,8 @@ function DonutChart({ segments, total }) {
 }
 
 function TasksByStatusCard({ taskStatusData = [] }) {
-  const total=taskStatusData.reduce((s,e)=>s+e.value,0);
-  const segments=taskStatusData.map(e=>({label:e.label,color:statusColor(e.label),pct:total>0?(e.value/total)*100:0,count:e.value}));
+  const total=taskStatusData.reduce((s,e)=>s+toNumber(e.value),0);
+  const segments=taskStatusData.map(e=>({label:e.label,color:statusColor(e.label),pct:total>0?(toNumber(e.value)/total)*100:0,count:toNumber(e.value)}));
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5">
       <h3 className="mb-3 text-xs font-semibold text-white sm:mb-4 sm:text-sm">Tasks by Status</h3>
@@ -154,14 +162,15 @@ function TasksByStatusCard({ taskStatusData = [] }) {
 }
 
 function TasksByWorkflowCard({ workflowMixData = [] }) {
-  const total=workflowMixData.reduce((s,e)=>s+e.value,0);
+  const total=workflowMixData.reduce((s,e)=>s+toNumber(e.value),0);
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5">
       <h3 className="mb-3 text-xs font-semibold text-white sm:mb-4 sm:text-sm">Tasks by Workflow</h3>
       {!workflowMixData.length ? <p className="text-xs text-slate-500">No data yet.</p> : (
         <div className="flex flex-col gap-2 sm:gap-3">
           {workflowMixData.map((w,i)=>{
-            const pct=total>0?(w.value/total)*100:0;
+            const value = toNumber(w.value);
+            const pct=total>0?(value/total)*100:0;
             const color=CHART_COLORS[i%CHART_COLORS.length];
             return (
               <div key={w.label} className="grid grid-cols-[1fr_auto] items-center gap-2 sm:gap-3">
@@ -172,7 +181,7 @@ function TasksByWorkflowCard({ workflowMixData = [] }) {
                   </div>
                 </div>
                 <span className="text-xs font-semibold text-white whitespace-nowrap">
-                  {w.value} <span className="font-normal text-slate-500">({pct.toFixed(1)}%)</span>
+                  {value} <span className="font-normal text-slate-500">({pct.toFixed(1)}%)</span>
                 </span>
               </div>
             );
@@ -185,7 +194,7 @@ function TasksByWorkflowCard({ workflowMixData = [] }) {
 
 // ─── Bottleneck Table ─────────────────────────────────────────────────────────
 const IMPACT_COLORS = { High:"bg-rose-500/20 text-rose-300", Medium:"bg-amber-500/20 text-amber-300", Low:"bg-emerald-500/20 text-emerald-300" };
-const waitImpact = (h) => { const d=h/24; return d>=1.5?"High":d>=0.75?"Medium":"Low"; };
+const waitImpact = (h) => { const d=toNumber(h)/24; return d>=1.5?"High":d>=0.75?"Medium":"Low"; };
 
 function BottleneckTable({ bottleneckStages = [] }) {
   return (
@@ -216,7 +225,7 @@ function BottleneckTable({ bottleneckStages = [] }) {
                     <td className="py-2 pr-3"><span className="inline-flex items-center gap-1.5 text-slate-200"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400"/>{row.stageName}</span></td>
                     <td className="py-2 pr-3 text-slate-400">{row.workflowName}</td>
                     <td className="py-2 pr-3 text-slate-300">{hoursToDisplay(row.avgWaitHours)}</td>
-                    <td className="py-2 pr-3 text-slate-400">{row.taskCount}</td>
+                    <td className="py-2 pr-3 text-slate-400">{toNumber(row.taskCount)}</td>
                     <td className="py-2"><span className={`rounded px-1.5 py-0.5 text-xs font-medium ${IMPACT_COLORS[impact]}`}>{impact}</span></td>
                   </tr>
                 );
@@ -307,10 +316,10 @@ function PerformanceTable({ title, rows = [] }) {
               {rows.map(row=>(
                 <tr key={row.name} className="border-t border-slate-800/60 hover:bg-slate-800/30">
                   <td className="py-2.5 pr-3 font-medium text-white">{row.name}</td>
-                  <td className="py-2.5 pr-3">{row.totalTasks}</td>
-                  <td className="py-2.5 pr-3 text-emerald-400">{row.completedTasks}</td>
-                  <td className="py-2.5 pr-3 text-cyan-400">{row.activeTasks}</td>
-                  <td className="py-2.5 pr-3 text-amber-400">{row.blockedTasks}</td>
+                  <td className="py-2.5 pr-3">{toNumber(row.totalTasks)}</td>
+                  <td className="py-2.5 pr-3 text-emerald-400">{toNumber(row.completedTasks)}</td>
+                  <td className="py-2.5 pr-3 text-cyan-400">{toNumber(row.activeTasks)}</td>
+                  <td className="py-2.5 pr-3 text-amber-400">{toNumber(row.blockedTasks)}</td>
                   <td className="py-2.5 pr-3">
                     <div className="flex items-center gap-1.5">
                       <div className="h-1.5 w-14 overflow-hidden rounded-full bg-slate-800 sm:w-20">
