@@ -79,7 +79,9 @@ IntelliFlow/
 |   `-- server.js
 |
 `-- README.md
+`-- ARCHITECTURE.md
 ```
+-If you want to deeper into the codebase, refer ARCHITECTURE.md
 
 ## Getting Started
 
