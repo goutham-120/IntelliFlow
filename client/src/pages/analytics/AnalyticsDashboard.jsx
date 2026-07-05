@@ -375,7 +375,7 @@ export default function AnalyticsDashboard() {
           <BottleneckTable bottleneckStages={data.bottleneckStages} />
           <WorkflowStatusCards workflowStatusCards={data.workflowStatusCards} />
           <PerformanceTable title="Team Performance" rows={data.teamPerformance} />
-          <PerformanceTable title="Employee Performance" rows={data.employeePerformance} />
+          {/* <PerformanceTable title="Employee Performance" rows={data.employeePerformance} /> */}
         </div>
       )}
     </div>
