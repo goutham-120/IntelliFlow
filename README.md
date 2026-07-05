@@ -81,7 +81,7 @@ IntelliFlow/
 `-- README.md
 `-- ARCHITECTURE.md
 ```
--If you want to deeper into the codebase, refer ARCHITECTURE.md
+-If you want to deeper into the codebase, refer the ARCHITECTURE.md
 
 ## Getting Started
 
