@@ -14,19 +14,6 @@ The application has two main parts:
 - `client/`: React + Vite frontend. It renders pages, stores auth state, calls API services, and shows workflow/task/analytics UI.
 - `server/`: Express + MongoDB backend. It owns validation, authentication, authorization, database models, business logic, notifications, workflow movement, task assignment, and analytics aggregation.
 
-The main request flow is:
-
-1. A user opens a page in the React app.
-2. React route renders the page through `client/src/routes/AppRoutes.jsx`.
-3. Protected pages check auth through `AuthContext`, `ProtectedRoute`, and `RoleGuard`.
-4. The page calls a frontend service in `client/src/services/*Service.js`.
-5. The service calls the backend through `client/src/services/api.js`.
-6. Express receives the request through `server/server.js`.
-7. Express routes forward to validators, auth middleware, role middleware, and controllers.
-8. Controllers call service functions.
-9. Services use Mongoose models to read/write MongoDB.
-10. The response travels back to the frontend service and updates page state.
-
 ## 2. Root Folder Structure
 
 <img width="824" height="372" alt="image" src="https://github.com/user-attachments/assets/b3b7f4ef-0b7c-4206-a25a-86c9d9612a66" />
@@ -170,7 +157,7 @@ The main request flow is:
 
 ### 3.5 Backend Controller Pattern
 
-<img width="200" height="253"  alt="image" src="https://github.com/user-attachments/assets/57eb0bf3-592d-400b-a812-9985cf7a0746" />
+<img width="185" height="263"  alt="image" src="https://github.com/user-attachments/assets/57eb0bf3-592d-400b-a812-9985cf7a0746" />
 
 
 `server/controllers/controllerHandler.js`
@@ -267,7 +254,7 @@ Controller files:
 
 Validators sanitize and reject invalid inputs before controllers reach services.
 
-<img width="265" height="290" alt="image" src="https://github.com/user-attachments/assets/02ba94f9-5fab-474d-b846-d78f161126ca" />
+<img width="280" height="320" alt="image" src="https://github.com/user-attachments/assets/02ba94f9-5fab-474d-b846-d78f161126ca" />
 
 
 
@@ -283,7 +270,7 @@ Validators sanitize and reject invalid inputs before controllers reach services.
 - `server/validators/validatorHelpers.js`: shared string/ObjectId normalization helpers.
 
 ### 3.8 Backend Constants
-<img width="190" height="160" alt="image" src="https://github.com/user-attachments/assets/f152030c-995d-4ca7-bb39-fc5f93e7c46f" />
+<img width="210" height="160" alt="image" src="https://github.com/user-attachments/assets/f152030c-995d-4ca7-bb39-fc5f93e7c46f" />
 
 - `server/constants/roles.js`: system role constants.
 - `server/constants/permissions.js`: permission names.
@@ -291,7 +278,7 @@ Validators sanitize and reject invalid inputs before controllers reach services.
 - `server/constants/auditActions.js`: allowed audit actions.
 
 ### 3.9 Backend Utilities
-<img width="190" height="160" alt="image" src="https://github.com/user-attachments/assets/5801e135-166d-495e-9e57-f47cbbe38d57" />
+<img width="235" height="175" alt="image" src="https://github.com/user-attachments/assets/5801e135-166d-495e-9e57-f47cbbe38d57" />
 
 `server/utils/responseHandler.js`
 
@@ -307,7 +294,7 @@ Validators sanitize and reject invalid inputs before controllers reach services.
 
 ### 3.10 Backend Services
 
-<img width="220" height="305" alt="image" src="https://github.com/user-attachments/assets/045d7bfd-6818-467a-994c-b25f541c36c5" />
+<img width="270" height="380" alt="image" src="https://github.com/user-attachments/assets/045d7bfd-6818-467a-994c-b25f541c36c5" />
 
 Services contain the application logic.
 
@@ -471,7 +458,7 @@ Services contain the application logic.
 - Contains Vite starter CSS. Not central to current app layout.
 
 ### 4.3 Frontend Contexts
-<img width="235" height="160" alt="image" src="https://github.com/user-attachments/assets/640b4cd3-eabb-4f1d-8db3-799e604420ad" />
+<img width="270" height="160" alt="image" src="https://github.com/user-attachments/assets/640b4cd3-eabb-4f1d-8db3-799e604420ad" />
 
 `client/src/context/AuthContext.jsx`
 
@@ -602,7 +589,7 @@ Service files:
 - `client/src/services/auditService.js`: audit API calls.
 
 ### 4.9 Frontend Utilities
-<img width="210" height="170" alt="image" src="https://github.com/user-attachments/assets/a3393456-b599-452e-9e9c-8de26341695b" />
+<img width="255" height="150" alt="image" src="https://github.com/user-attachments/assets/a3393456-b599-452e-9e9c-8de26341695b" />
 
 `client/src/utils/constants.js`
 
@@ -617,7 +604,9 @@ Service files:
 - Frontend validation helpers.
 
 ## 5. Page-by-Page Frontend Flow
+<img width="740" height="800" alt="image" src="https://github.com/user-attachments/assets/e404a638-f53b-4ec0-aaae-605c750d4a2e" />
 
+src folder contains the pages folder and components folder too.
 ### 5.1 Home
 
 `client/src/pages/home/Home.jsx`
@@ -1015,26 +1004,21 @@ Backend:
 
 The connection layer is:
 
-```text
-React page
-  -> client/src/services/<domain>Service.js
-    -> client/src/services/api.js
-      -> HTTP request to VITE_API_URL or http://localhost:5000/api
-        -> server/server.js route mount
-          -> route middleware
-            -> validator
-              -> controller
-                -> service
-                  -> Mongoose model
-```
+<img width="720" height="900" alt="image" src="https://github.com/user-attachments/assets/05b18795-f270-407e-bca0-9d3dbc70117b" />
 
-Authentication:
+The main request flow is:
 
-1. Login/register response includes `token` and `user`.
-2. `AuthContext.login` stores both in `localStorage`.
-3. `api.js` adds token to every request.
-4. Backend `protect` middleware validates JWT and sets `req.user`.
-5. Role middleware checks `req.user.role`.
+1. A user opens a page in the React app.
+2. React route renders the page through `client/src/routes/AppRoutes.jsx`.
+3. Protected pages check auth through `AuthContext`, `ProtectedRoute`, and `RoleGuard`.
+4. The page calls a frontend service in `client/src/services/*Service.js`.
+5. The service calls the backend through `client/src/services/api.js`.
+6. Express receives the request through `server/server.js`.
+7. Express routes forward to validators, auth middleware, role middleware, and controllers.
+8. Controllers call service functions.
+9. Services use Mongoose models to read/write MongoDB.
+10. The response travels back to the frontend service and updates page state.
+
 
 ## 10. Complete File Inventory
 
