@@ -387,13 +387,11 @@ function SummaryCard({ stages, workflow }) {
     ? new Date(workflow.updatedAt).toLocaleDateString()
     : "—";
   // createdBy is populated by the backend as { name: "..." }
-  const createdBy = workflow.createdBy?.name || "—";
 
   return (
     <div className="rounded-lg border border-slate-800 bg-[#081421] p-5">
       <h3 className="mb-4 font-semibold text-white">Workflow Summary</h3>
       <InfoRow label="Workflow ID"  value={`WF-${String(workflow._id).slice(-6).toUpperCase()}`} />
-      <InfoRow label="Created By"  value={createdBy} />
       <InfoRow label="Created On"  value={created} />
       <InfoRow label="Last Updated" value={updated} />
       <InfoRow
