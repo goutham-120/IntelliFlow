@@ -47,18 +47,34 @@ export const selectLeastLoadedGroupMember = async ({
   }
 
   const loadEntries = await Promise.all(
-    activeMembers.map(async (membership) => ({
-      membership,
-      load: await Task.countDocuments({
-        organizationId,
-        assignedTo: membership.userId._id,
-        status: { $in: ["pending", "in_progress", "blocked", "rejected", "needs_changes"] },
-      }),
-    }))
+    activeMembers.map(async (membership) => {
+      const userId = membership.userId._id;
+      const [completedWork, activeLoad] = await Promise.all([
+        Task.countDocuments({
+          organizationId,
+          $or: [
+            { "completedStages.assignedTo": userId },
+            { status: "done", assignedTo: userId },
+          ],
+        }),
+        Task.countDocuments({
+          organizationId,
+          assignedTo: userId,
+          status: { $in: ["pending", "in_progress", "blocked", "rejected", "needs_changes"] },
+        }),
+      ]);
+
+      return {
+        membership,
+        completedWork,
+        activeLoad,
+      };
+    })
   );
 
   loadEntries.sort((a, b) => {
-    if (a.load !== b.load) return a.load - b.load;
+    if (a.completedWork !== b.completedWork) return a.completedWork - b.completedWork;
+    if (a.activeLoad !== b.activeLoad) return a.activeLoad - b.activeLoad;
     return new Date(a.membership.createdAt) - new Date(b.membership.createdAt);
   });
 
