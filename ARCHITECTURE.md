@@ -4,6 +4,8 @@ This document explains the IntelliFlow codebase from top to bottom: folder struc
 
 
 ## 1. High-Level System
+<img width="1240" height="690" alt="Architecture" src="https://github.com/user-attachments/assets/60c3a776-e979-40c2-9b7d-7c98bd4563ec" />
+
 
 IntelliFlow is a full-stack workflow and task-management app.
 
@@ -12,48 +14,14 @@ The application has two main parts:
 - `client/`: React + Vite frontend. It renders pages, stores auth state, calls API services, and shows workflow/task/analytics UI.
 - `server/`: Express + MongoDB backend. It owns validation, authentication, authorization, database models, business logic, notifications, workflow movement, task assignment, and analytics aggregation.
 
-The main request flow is:
-
-1. A user opens a page in the React app.
-2. React route renders the page through `client/src/routes/AppRoutes.jsx`.
-3. Protected pages check auth through `AuthContext`, `ProtectedRoute`, and `RoleGuard`.
-4. The page calls a frontend service in `client/src/services/*Service.js`.
-5. The service calls the backend through `client/src/services/api.js`.
-6. Express receives the request through `server/server.js`.
-7. Express routes forward to validators, auth middleware, role middleware, and controllers.
-8. Controllers call service functions.
-9. Services use Mongoose models to read/write MongoDB.
-10. The response travels back to the frontend service and updates page state.
-
 ## 2. Root Folder Structure
 
-```text
-IntelliFlow/
-  README.md
-  architechture.md
-  client/
-    React frontend
-  server/
-    Express/Mongo backend
-```
+<img width="824" height="372" alt="image" src="https://github.com/user-attachments/assets/b3b7f4ef-0b7c-4206-a25a-86c9d9612a66" />
+
 
 `README.md` contains general project setup notes. This file explains internals.
 
 ## 3. Backend Architecture
-
-The backend follows this order:
-
-```text
-server.js
-  -> routes/*
-    -> middleware/*
-    -> validators/*
-    -> controllers/*
-      -> services/*
-        -> models/*
-        -> utils/*
-        -> constants/*
-```
 
 ### 3.1 Backend Entry Point
 
@@ -75,7 +43,9 @@ server.js
 - Starts the server on `process.env.PORT || 5000`.
 
 ### 3.2 Backend Config
+<img width="224" height="135" alt="image" src="https://github.com/user-attachments/assets/b73a1242-1594-4657-a537-6b3bc13fa7af" />
 
+    
 `server/config/db.js`
 
 - Connects Mongoose to MongoDB.
@@ -87,7 +57,9 @@ server.js
 
 ### 3.3 Backend Models
 
-Models define MongoDB collections and database shape.
+<img width="274" height="220" alt="image" src="https://github.com/user-attachments/assets/b2f28317-d497-4cf9-9b87-fbb79cd0687b" />
+
+-Models define MongoDB collections and database shape.
 
 `server/models/Organization.js`
 
@@ -161,6 +133,8 @@ Models define MongoDB collections and database shape.
 
 ### 3.4 Backend Middleware
 
+<img width="254" height="180" alt="image" src="https://github.com/user-attachments/assets/e6060c3c-1b8e-4725-a0de-7d644ac7614a" />
+
 `server/middleware/authMiddleware.js`
 
 - Reads JWT from the `Authorization: Bearer <token>` header.
@@ -182,6 +156,9 @@ Models define MongoDB collections and database shape.
 - Used at the end of `server/server.js`.
 
 ### 3.5 Backend Controller Pattern
+
+<img width="185" height="263"  alt="image" src="https://github.com/user-attachments/assets/57eb0bf3-592d-400b-a812-9985cf7a0746" />
+
 
 `server/controllers/controllerHandler.js`
 
@@ -205,7 +182,11 @@ Controller files:
 
 ### 3.6 Backend Routes
 
-Routes define public API URLs.
+<img width="200" height="253" alt="image" src="https://github.com/user-attachments/assets/94cdcfc3-d8f8-4f04-8c2a-63509faee6a8" />
+
+
+
+-Routes define public API URLs.
 
 `server/routes/authRoutes.js`
 
@@ -273,6 +254,12 @@ Routes define public API URLs.
 
 Validators sanitize and reject invalid inputs before controllers reach services.
 
+<img width="280" height="320" alt="image" src="https://github.com/user-attachments/assets/02ba94f9-5fab-474d-b846-d78f161126ca" />
+
+
+
+
+
 - `server/validators/authValidator.js`: organization registration/login/Google credential payloads.
 - `server/validators/userValidator.js`: admin user create/update payloads.
 - `server/validators/groupValidator.js`: team, membership, role, and task-assignment payloads.
@@ -283,6 +270,7 @@ Validators sanitize and reject invalid inputs before controllers reach services.
 - `server/validators/validatorHelpers.js`: shared string/ObjectId normalization helpers.
 
 ### 3.8 Backend Constants
+<img width="210" height="160" alt="image" src="https://github.com/user-attachments/assets/f152030c-995d-4ca7-bb39-fc5f93e7c46f" />
 
 - `server/constants/roles.js`: system role constants.
 - `server/constants/permissions.js`: permission names.
@@ -290,6 +278,7 @@ Validators sanitize and reject invalid inputs before controllers reach services.
 - `server/constants/auditActions.js`: allowed audit actions.
 
 ### 3.9 Backend Utilities
+<img width="235" height="175" alt="image" src="https://github.com/user-attachments/assets/5801e135-166d-495e-9e57-f47cbbe38d57" />
 
 `server/utils/responseHandler.js`
 
@@ -304,6 +293,8 @@ Validators sanitize and reject invalid inputs before controllers reach services.
 - Shared general helpers.
 
 ### 3.10 Backend Services
+
+<img width="270" height="380" alt="image" src="https://github.com/user-attachments/assets/045d7bfd-6818-467a-994c-b25f541c36c5" />
 
 Services contain the application logic.
 
@@ -413,18 +404,6 @@ Services contain the application logic.
 
 ## 4. Frontend Architecture
 
-The frontend is a React SPA.
-
-```text
-main.jsx
-  -> App.jsx
-    -> providers
-      -> AppRoutes.jsx
-        -> layouts
-          -> pages
-            -> components
-            -> services
-```
 
 ### 4.1 Frontend Entry
 
@@ -479,6 +458,7 @@ main.jsx
 - Contains Vite starter CSS. Not central to current app layout.
 
 ### 4.3 Frontend Contexts
+<img width="270" height="160" alt="image" src="https://github.com/user-attachments/assets/640b4cd3-eabb-4f1d-8db3-799e604420ad" />
 
 `client/src/context/AuthContext.jsx`
 
@@ -496,6 +476,8 @@ main.jsx
 - Stores organization-related context for the frontend.
 
 ### 4.4 Frontend Hooks
+<img width="225" height="150" alt="image" src="https://github.com/user-attachments/assets/a059c54e-f64a-4975-aae7-6c825b537504" />
+
 
 `client/src/hooks/useAuth.js`
 
@@ -547,6 +529,7 @@ main.jsx
 - Shared auth-page layout.
 
 ### 4.7 Frontend Common Components
+<img width="220" height="305" alt="image" src="https://github.com/user-attachments/assets/ba94c4ba-6e45-4b55-99f7-17ac80e7776c" />
 
 `client/src/components/common/Sidebar.jsx`
 
@@ -583,6 +566,7 @@ main.jsx
 - Reusable toggle control.
 
 ### 4.8 Frontend Service Layer
+<img width="220" height="310" alt="image" src="https://github.com/user-attachments/assets/67250ea6-7ee0-4e78-b5e3-71fd0c9e1131" />
 
 All frontend services use `client/src/services/api.js`.
 
@@ -605,6 +589,7 @@ Service files:
 - `client/src/services/auditService.js`: audit API calls.
 
 ### 4.9 Frontend Utilities
+<img width="255" height="150" alt="image" src="https://github.com/user-attachments/assets/a3393456-b599-452e-9e9c-8de26341695b" />
 
 `client/src/utils/constants.js`
 
@@ -619,7 +604,9 @@ Service files:
 - Frontend validation helpers.
 
 ## 5. Page-by-Page Frontend Flow
+<img width="740" height="800" alt="image" src="https://github.com/user-attachments/assets/e404a638-f53b-4ec0-aaae-605c750d4a2e" />
 
+src folder contains the pages folder and components folder too.
 ### 5.1 Home
 
 `client/src/pages/home/Home.jsx`
@@ -1017,26 +1004,21 @@ Backend:
 
 The connection layer is:
 
-```text
-React page
-  -> client/src/services/<domain>Service.js
-    -> client/src/services/api.js
-      -> HTTP request to VITE_API_URL or http://localhost:5000/api
-        -> server/server.js route mount
-          -> route middleware
-            -> validator
-              -> controller
-                -> service
-                  -> Mongoose model
-```
+<img width="720" height="900" alt="image" src="https://github.com/user-attachments/assets/05b18795-f270-407e-bca0-9d3dbc70117b" />
 
-Authentication:
+The main request flow is:
 
-1. Login/register response includes `token` and `user`.
-2. `AuthContext.login` stores both in `localStorage`.
-3. `api.js` adds token to every request.
-4. Backend `protect` middleware validates JWT and sets `req.user`.
-5. Role middleware checks `req.user.role`.
+1. A user opens a page in the React app.
+2. React route renders the page through `client/src/routes/AppRoutes.jsx`.
+3. Protected pages check auth through `AuthContext`, `ProtectedRoute`, and `RoleGuard`.
+4. The page calls a frontend service in `client/src/services/*Service.js`.
+5. The service calls the backend through `client/src/services/api.js`.
+6. Express receives the request through `server/server.js`.
+7. Express routes forward to validators, auth middleware, role middleware, and controllers.
+8. Controllers call service functions.
+9. Services use Mongoose models to read/write MongoDB.
+10. The response travels back to the frontend service and updates page state.
+
 
 ## 10. Complete File Inventory
 
