@@ -352,12 +352,12 @@ function WorkflowOverview({ groupsById, isAdmin, workflow }) {
                 stage={stage}
               />
             ))}
-            <div className="flex min-h-44 flex-col items-center justify-center rounded-lg border border-dashed border-emerald-400/30 bg-emerald-500/5 p-4 text-center text-sm text-emerald-200">
+            {/* <div className="flex min-h-44 flex-col items-center justify-center rounded-lg border border-dashed border-emerald-400/30 bg-emerald-500/5 p-4 text-center text-sm text-emerald-200">
               <span className="mb-3 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs uppercase tracking-wider text-emerald-300">
                 Finish
               </span>
               <span className="font-semibold text-white">Workflow Complete</span>
-            </div>
+            </div> */}
           </div>
         )}
         <div className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-400">
