@@ -63,7 +63,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
       >
         {/* Logo — fixed, never shrinks */}
         <div className="mb-6 flex shrink-0 items-center px-3">
-          <img src={logo} alt="IntelliFlow" className="h-12 w-auto rounded-lg bg-white p-1" />
+          <img src={logo} alt="IntelliFlow" className="h-12 w-auto rounded-lg bg-black p-1" />
         </div>
 
         {/* Scrollable nav area — takes remaining space, scrolls if needed */}
