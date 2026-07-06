@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
 import useAuth from "../../hooks/useAuth";
 import { registerOrganization, registerOrganizationWithGoogle } from "../../services/authService";
-import logo from "../home/image.png";
+import logo from "../../assets/logo-light.png";
 
 export default function Register() {
   const navigate = useNavigate();

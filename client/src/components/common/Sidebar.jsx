@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/logo-dark.png";
 
 const icons = {
   Dashboard: "M4 10.5 12 4l8 6.5V20h-5v-6H9v6H4v-9.5Z",
