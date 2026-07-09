@@ -26,6 +26,12 @@ body {
   color: #e5eef7;
   font-family: "Manrope", sans-serif;
   transition: background-color 200ms ease, color 200ms ease;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
 }
 
 html[data-theme="light"] body {

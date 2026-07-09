@@ -66,8 +66,8 @@ export default function Sidebar({ sidebarOpen, onClose }) {
           <img src={logo} alt="IntelliFlow" className="h-12 w-auto rounded-lg bg-black px-4 py-1" />
         </div>
 
-        {/* Scrollable nav area — takes remaining space, scrolls if needed */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-3">
+        {/* Navigation area */}
+        <div className="min-h-0 flex-1 px-3">
           <p className="mb-4 px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
             Main Menu
           </p>
