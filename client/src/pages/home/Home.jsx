@@ -167,8 +167,7 @@ export default function Home() {
               }}
             >
               IntelliFlow helps organizations define structured processes,
-              assign ownership to teams, and track performance at every stage —
-              transparently.
+              assign ownership to teams, and track performance on task completion.
             </p>
             <div
               className="u3"
@@ -274,7 +273,7 @@ export default function Home() {
                 key={i}
                 className="card"
                 style={{
-                  background: i % 3 === 0 ? "var(--green-light)" : "#fff",
+                  background: i === 0 || i === 5 ? "var(--green-light)" : "#fff",
                 }}
               >
                 <div style={{ fontSize: 22, marginBottom: 10 }}>{f.icon}</div>
