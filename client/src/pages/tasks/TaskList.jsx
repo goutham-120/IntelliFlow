@@ -121,13 +121,6 @@ export default function TaskList() {
         </div>
       )}
 
-      <section className="rounded-lg border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] p-5 text-sm text-slate-300 shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
-        <p className="font-medium text-white">Quick orientation</p>
-        <p className="mt-2 text-slate-400">
-          Each card below shows a task, its workflow stage, current team, and current
-          assignee. Admins can use the status picker on the card to make small updates quickly.
-        </p>
-      </section>
 
       <section className="rounded-lg border border-slate-800/90 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(17,24,39,0.8))] shadow-[0_18px_45px_rgba(2,6,23,0.26)]">
         <TaskTable
