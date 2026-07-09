@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import Loader from "../../components/common/Loader";
 import useAuth from "../../hooks/useAuth";
 import { fetchUserGroups } from "../../services/groupService";
-import { fetchInboxNotifications } from "../../services/notificationService";
+import { fetchInboxNotifications, INBOX_UPDATED_EVENT } from "../../services/notificationService";
 import { fetchTasks } from "../../services/taskService";
 import { formatDateTime } from "../../utils/formatDate";
 
@@ -80,51 +80,64 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const loadDashboard = async () => {
-      if (!userId) { setLoading(false); return; }
-      setLoading(true);
-      setError("");
-      try {
-        const [taskResult, inboxResult, groupsResult] = await Promise.allSettled([
-          fetchTasks({ onlyMine: true }),
-          fetchInboxNotifications({ limit: 6 }),
-          fetchUserGroups(userId),
-        ]);
-        setTasks(taskResult.status === "fulfilled" && Array.isArray(taskResult.value) ? taskResult.value : []);
-        setNotifications(inboxResult.status === "fulfilled" && Array.isArray(inboxResult.value) ? inboxResult.value : []);
-        setMemberships(groupsResult.status === "fulfilled" && Array.isArray(groupsResult.value) ? groupsResult.value : []);
-        if (taskResult.status === "rejected" && inboxResult.status === "rejected") {
-          const fallback = taskResult.reason || inboxResult.reason;
-          setError(fallback?.response?.data?.message || "Unable to fetch live data right now");
-        }
-      } catch (err) {
-        setError(err.response?.data?.message || "Failed to load dashboard");
-      } finally {
-        setLoading(false);
+  const loadDashboard = useCallback(async () => {
+    if (!userId) { setLoading(false); return; }
+    setLoading(true);
+    setError("");
+    try {
+      const [taskResult, inboxResult, groupsResult] = await Promise.allSettled([
+        fetchTasks({ onlyMine: true }),
+        fetchInboxNotifications({ limit: 6 }),
+        fetchUserGroups(userId),
+      ]);
+      setTasks(taskResult.status === "fulfilled" && Array.isArray(taskResult.value) ? taskResult.value : []);
+      setNotifications(inboxResult.status === "fulfilled" && Array.isArray(inboxResult.value) ? inboxResult.value : []);
+      setMemberships(groupsResult.status === "fulfilled" && Array.isArray(groupsResult.value) ? groupsResult.value : []);
+      if (taskResult.status === "rejected" && inboxResult.status === "rejected") {
+        const fallback = taskResult.reason || inboxResult.reason;
+        setError(fallback?.response?.data?.message || "Unable to fetch live data right now");
       }
-    };
-    loadDashboard();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load dashboard");
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    const handleDashboardRefresh = () => {
+      loadDashboard();
+    };
+
+    window.addEventListener(INBOX_UPDATED_EVENT, handleDashboardRefresh);
+    return () => {
+      window.removeEventListener(INBOX_UPDATED_EVENT, handleDashboardRefresh);
+    };
+  }, [loadDashboard]);
 
   const myMetrics = useMemo(() => {
     const myUserId = toId(userId);
-    const myTasks = tasks.filter((t) => toId(t.assignedTo?._id || t.assignedTo) === myUserId);
-    const myActiveTasks = myTasks.filter((t) => ACTIVE_STATUSES.has(t.status));
-    const myStageEntries = tasks.flatMap((t) =>
-      (t.completedStages || [])
-        .filter((e) => toId(e.completedBy?._id || e.completedBy) === myUserId)
-        .map((e) => ({ taskId: t._id, stageName: e.stageName || "Unnamed Stage" }))
+    const myTasks = tasks.filter((task) => toId(task.assignedTo?._id || task.assignedTo) === myUserId);
+    const myActiveTasks = myTasks.filter((task) => ACTIVE_STATUSES.has(task.status));
+    const myStageEntries = tasks.flatMap((task) =>
+      (task.completedStages || [])
+        .filter((entry) => toId(entry.completedBy?._id || entry.completedBy) === myUserId)
+        .map((entry) => ({ taskId: task._id, stageName: entry.stageName || "Unnamed Stage" }))
     );
-    const stageBreakdownMap = myStageEntries.reduce((acc, e) => {
-      acc.set(e.stageName, (acc.get(e.stageName) || 0) + 1);
+    const stageBreakdownMap = myStageEntries.reduce((acc, entry) => {
+      acc.set(entry.stageName, (acc.get(entry.stageName) || 0) + 1);
       return acc;
     }, new Map());
     const stageBreakdown = Array.from(stageBreakdownMap.entries())
       .map(([stageName, count]) => ({ stageName, count }))
       .sort((a, b) => b.count - a.count || a.stageName.localeCompare(b.stageName));
-    const contributedTaskIds = new Set(myStageEntries.map((e) => toId(e.taskId)));
-    const unreadNotifications = notifications.filter((n) => !n.isRead).length;
+    const contributedTaskIds = new Set(myStageEntries.map((entry) => toId(entry.taskId)));
+    const unreadNotifications = notifications.filter((notification) => !notification.isRead).length;
+
     return {
       myActiveTasks,
       myStageEntries,
@@ -132,15 +145,16 @@ export default function Dashboard() {
       unreadNotifications,
       contributedTaskCount: contributedTaskIds.size,
       recentMyTasks: [...myTasks].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)).slice(0, 6),
+      membershipsCount: memberships.length,
     };
-  }, [notifications, tasks, userId]);
+  }, [memberships.length, notifications, tasks, userId]);
 
   const summaryCards = useMemo(() => [
     { title: "My Active Tasks", value: myMetrics.myActiveTasks.length, hint: "Tasks currently requiring your action", tone: "emerald" },
     { title: "Stage Completions", value: myMetrics.myStageEntries.length, hint: "Total stage handoffs completed by you", tone: "cyan" },
-    { title: "Team Memberships", value: memberships.length, hint: "Teams where you currently contribute", tone: "amber" },
+    { title: "Team Memberships", value: myMetrics.membershipsCount, hint: "Teams where you currently contribute", tone: "amber" },
     { title: "Unread Alerts", value: myMetrics.unreadNotifications, hint: "Inbox items waiting for your review", tone: "rose" },
-  ], [memberships.length, myMetrics]);
+  ], [myMetrics]);
 
   if (loading) return <Loader label="Loading your dashboard..." />;
   if (error) return (
