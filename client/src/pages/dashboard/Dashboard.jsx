@@ -7,8 +7,8 @@ import { fetchUserGroups } from "../../services/groupService";
 import { fetchInboxNotifications, INBOX_UPDATED_EVENT } from "../../services/notificationService";
 import { fetchTasks } from "../../services/taskService";
 import { formatDateTime } from "../../utils/formatDate";
+import { buildDashboardMetrics } from "./dashboardMetrics";
 
-const ACTIVE_STATUSES = new Set(["pending", "in_progress", "blocked", "needs_changes"]);
 const toId = (value) => String(value || "");
 const toTitle = (value) =>
   String(value || "").split("_").map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
@@ -86,7 +86,7 @@ export default function Dashboard() {
     setError("");
     try {
       const [taskResult, inboxResult, groupsResult] = await Promise.allSettled([
-        fetchTasks({ onlyMine: true }),
+        fetchTasks(),
         fetchInboxNotifications({ limit: 6 }),
         fetchUserGroups(userId),
       ]);
@@ -119,35 +119,12 @@ export default function Dashboard() {
     };
   }, [loadDashboard]);
 
-  const myMetrics = useMemo(() => {
-    const myUserId = toId(userId);
-    const myTasks = tasks.filter((task) => toId(task.assignedTo?._id || task.assignedTo) === myUserId);
-    const myActiveTasks = myTasks.filter((task) => ACTIVE_STATUSES.has(task.status));
-    const myStageEntries = tasks.flatMap((task) =>
-      (task.completedStages || [])
-        .filter((entry) => toId(entry.completedBy?._id || entry.completedBy) === myUserId)
-        .map((entry) => ({ taskId: task._id, stageName: entry.stageName || "Unnamed Stage" }))
-    );
-    const stageBreakdownMap = myStageEntries.reduce((acc, entry) => {
-      acc.set(entry.stageName, (acc.get(entry.stageName) || 0) + 1);
-      return acc;
-    }, new Map());
-    const stageBreakdown = Array.from(stageBreakdownMap.entries())
-      .map(([stageName, count]) => ({ stageName, count }))
-      .sort((a, b) => b.count - a.count || a.stageName.localeCompare(b.stageName));
-    const contributedTaskIds = new Set(myStageEntries.map((entry) => toId(entry.taskId)));
-    const unreadNotifications = notifications.filter((notification) => !notification.isRead).length;
-
-    return {
-      myActiveTasks,
-      myStageEntries,
-      stageBreakdown,
-      unreadNotifications,
-      contributedTaskCount: contributedTaskIds.size,
-      recentMyTasks: [...myTasks].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)).slice(0, 6),
-      membershipsCount: memberships.length,
-    };
-  }, [memberships.length, notifications, tasks, userId]);
+  const myMetrics = useMemo(() => buildDashboardMetrics({
+    tasks,
+    notifications,
+    memberships,
+    userId,
+  }), [memberships, notifications, tasks, userId]);
 
   const summaryCards = useMemo(() => [
     { title: "My Active Tasks", value: myMetrics.myActiveTasks.length, hint: "Tasks currently requiring your action", tone: "emerald" },
