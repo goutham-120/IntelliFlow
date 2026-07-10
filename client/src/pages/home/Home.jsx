@@ -71,10 +71,107 @@ export default function Home() {
         .u2 { animation: up 0.6s 0.2s ease forwards; opacity: 0; }
         .u3 { animation: up 0.6s 0.32s ease forwards; opacity: 0; }
         .u4 { animation: up 0.6s 0.44s ease forwards; opacity: 0; }
+
+        @media (max-width: 768px) {
+          nav {
+            height: auto !important;
+            padding: 16px 18px !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+          .nav-actions {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+          }
+          .nav-actions a {
+            width: 100%;
+            justify-content: center;
+          }
+          .hero-section {
+            padding: 56px 20px 46px !important;
+          }
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+            gap: 28px !important;
+          }
+          .hero-actions {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+            margin-bottom: 32px !important;
+          }
+          .hero-actions a {
+            width: 100%;
+            justify-content: center;
+          }
+          .stats-row {
+            flex-direction: column !important;
+            gap: 16px !important;
+            padding-top: 24px !important;
+          }
+          .stats-item {
+            padding-left: 0 !important;
+            border-left: none !important;
+            border-top: 1px solid var(--border) !important;
+            padding-top: 14px !important;
+          }
+          .stats-item:first-child {
+            border-top: none !important;
+            padding-top: 0 !important;
+          }
+          .feature-grid {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+          .feature-card {
+            padding: 20px 16px !important;
+          }
+          .steps-section {
+            padding: 56px 20px !important;
+          }
+          .steps-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+          .steps-card {
+            padding: 24px 20px !important;
+          }
+          .cta-section {
+            padding: 44px 20px !important;
+          }
+          .cta-inner {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 20px !important;
+          }
+          .cta-actions {
+            width: 100%;
+            flex-direction: column !important;
+          }
+          .cta-actions a {
+            width: 100%;
+            justify-content: center;
+          }
+          .footer-shell {
+            padding: 22px 20px !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 14px !important;
+          }
+          .footer-links {
+            width: 100%;
+            justify-content: space-between !important;
+            gap: 14px;
+          }
+        }
       `}</style>
 
       {/* NAV */}
       <nav
+        className="mobile-nav"
         style={{
           position: "sticky",
           top: 0,
@@ -106,7 +203,7 @@ export default function Home() {
             Intelli<span style={{ color: "var(--green)" }}>Flow</span>
           </span> */}
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div className="nav-actions" style={{ display: "flex", gap: 10 }}>
           <Link
             to="/login"
             className="btn-outline"
@@ -126,9 +223,11 @@ export default function Home() {
 
       {/* HERO */}
       <section
+        className="hero-section"
         style={{ maxWidth: 1100, margin: "0 auto", padding: "88px 48px 72px" }}
       >
         <div
+          className="hero-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
@@ -170,7 +269,7 @@ export default function Home() {
               assign ownership to teams, and track performance on task completion.
             </p>
             <div
-              className="u3"
+              className="u3 hero-actions"
               style={{
                 display: "flex",
                 gap: 12,
@@ -196,7 +295,7 @@ export default function Home() {
             </div>
             {/* Stats */}
             <div
-              className="u4"
+              className="u4 stats-row"
               style={{
                 display: "flex",
                 gap: 0,
@@ -211,6 +310,7 @@ export default function Home() {
               ].map((s, i) => (
                 <div
                   key={i}
+                  className="stats-item"
                   style={{
                     flex: 1,
                     paddingLeft: i === 0 ? 0 : 24,
@@ -235,6 +335,7 @@ export default function Home() {
 
           {/* Right — feature cards */}
           <div
+            className="feature-grid"
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}
           >
             {[
@@ -271,7 +372,7 @@ export default function Home() {
             ].map((f, i) => (
               <div
                 key={i}
-                className="card"
+                className="card feature-card"
                 style={{
                   background: i === 0 || i === 5 ? "var(--green-light)" : "#fff",
                 }}
@@ -305,7 +406,7 @@ export default function Home() {
       <hr className="divider" />
 
       {/* HOW IT WORKS */}
-      <section style={{ background: "var(--bg2)", padding: "72px 48px" }}>
+      <section className="steps-section" style={{ background: "var(--bg2)", padding: "72px 48px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="section-label">How it works</div>
           <h2
@@ -320,6 +421,7 @@ export default function Home() {
             Up and running in three steps
           </h2>
           <div
+            className="steps-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
@@ -345,6 +447,7 @@ export default function Home() {
             ].map((s, i) => (
               <div
                 key={i}
+                className="steps-card"
                 style={{
                   padding: "32px 28px",
                   background: "#fff",
@@ -391,8 +494,9 @@ export default function Home() {
       <hr className="divider" />
 
       {/* CTA STRIP */}
-      <section style={{ background: "var(--green)", padding: "60px 48px" }}>
+      <section className="cta-section" style={{ background: "var(--green)", padding: "60px 48px" }}>
         <div
+          className="cta-inner"
           style={{
             maxWidth: 1100,
             margin: "0 auto",
@@ -425,7 +529,7 @@ export default function Home() {
               Free to start. No credit card required.
             </p>
           </div>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <div className="cta-actions" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <Link
               to="/register"
               style={{
@@ -477,6 +581,7 @@ export default function Home() {
 
       {/* FOOTER */}
       <footer
+        className="footer-shell"
         style={{
           borderTop: "1px solid var(--border)",
           padding: "24px 48px",
@@ -515,7 +620,7 @@ export default function Home() {
         <p style={{ fontSize: "0.78rem", color: "var(--muted)" }}>
           © {new Date().getFullYear()} IntelliFlow · MERN + Audit Compliance
         </p>
-        <div style={{ display: "flex", gap: 20 }}>
+        <div className="footer-links" style={{ display: "flex", gap: 20 }}>
           {["Privacy", "Terms", "Docs"].map((l) => (
             <a
               key={l}
