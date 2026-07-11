@@ -67,7 +67,7 @@ export default function Sidebar({ sidebarOpen, onClose }) {
         </div>
 
         {/* Navigation area */}
-        <div className="min-h-0 flex-1 px-3">
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 md:overflow-visible">
           <p className="mb-4 px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
             Main Menu
           </p>
